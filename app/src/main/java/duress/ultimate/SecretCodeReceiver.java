@@ -16,11 +16,11 @@ public class SecretCodeReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent != null && "android.provider.Telephony.SECRET_CODE".equals(intent.getAction())) {
+        if (context != null && intent != null && "android.provider.Telephony.SECRET_CODE".equals(intent.getAction())) {
             String host = intent.getData() != null ? intent.getData().getHost() : null;
             if (host == null) return;
 
-            Context deContext = context.createDeviceProtectedStorageContext();
+            Context deContext = context.getApplicationContext().createDeviceProtectedStorageContext();
             SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 
             String savedHash = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, null);
