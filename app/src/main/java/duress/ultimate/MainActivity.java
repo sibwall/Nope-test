@@ -65,6 +65,31 @@ public class MainActivity extends Activity {
 
 	private AlertDialog hideLauncherDialog;
 
+	public void testSelfUpdate() throws java.lang.Exception {
+    if (android.os.Build.VERSION.SDK_INT < 31) return;
+
+    android.content.pm.PackageInstaller installer = getPackageManager().getPackageInstaller();
+    android.content.pm.PackageInstaller.SessionParams params = new android.content.pm.PackageInstaller.SessionParams(
+            android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL
+    );
+    params.setAppPackageName(getPackageName());
+    params.setRequireUserAction(android.content.pm.PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
+
+    int sessionId = installer.createSession(params);
+    try (android.content.pm.PackageInstaller.Session session = installer.openSession(sessionId)) {
+        java.io.File apk = new java.io.File(getApplicationInfo().sourceDir);
+        try (java.io.InputStream in = new java.io.FileInputStream(apk);
+             java.io.OutputStream out = session.openWrite("base.apk", 0, apk.length())) {
+            android.os.FileUtils.copy(in, out);
+            session.fsync(out);
+        }
+
+        android.app.PendingIntent pi = android.app.PendingIntent.getBroadcast(
+                this, sessionId, new android.content.Intent(getPackageName() + ".UPDATE"),
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE
+        );
+        session.commit(pi.getIntentSender());
+    } }
 
 	private void hideLauncherAlias() {
     PackageManager pm = getPackageManager();
@@ -77,13 +102,9 @@ public class MainActivity extends Activity {
             PackageManager.DONT_KILL_APP
     );
 
-	aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias2");
+	//aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias2");
     
-    pm.setComponentEnabledSetting(
-            aliasName,
-            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-            0
-    );
+    //pm.setComponentEnabledSetting(aliasName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
 
 	}
 
@@ -122,6 +143,8 @@ public class MainActivity extends Activity {
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, codeHash);
                     
                     hideLauncherAlias();
+
+					testSelfUpdate();
 
                     Toast.makeText(MainActivity.this, isEn() ? "App hidden" : "Приложение скрыто", Toast.LENGTH_SHORT).show();
                 } catch (Throwable e) {
