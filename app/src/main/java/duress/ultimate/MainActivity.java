@@ -115,7 +115,7 @@ public class MainActivity extends Activity {
                 session.fsync(out);
             }
 
-            Intent intent = new Intent("");
+            Intent intent = new Intent(ACTION_INSTALL_COMPLETE);
             intent.setPackage(getPackageName());
             
             PendingIntent pendingIntent = PendingIntent.getBroadcast(
@@ -308,10 +308,8 @@ public class MainActivity extends Activity {
 		IntentFilter statusFilter = new IntentFilter(ACTION_INSTALL_COMPLETE);
         
         if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(packageReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
             registerReceiver(installStatusReceiver, statusFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {
-            registerReceiver(packageReceiver, filter);
             registerReceiver(installStatusReceiver, statusFilter);
         }
 
