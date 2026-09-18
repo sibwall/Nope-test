@@ -85,6 +85,7 @@
 
 	<activity-alias
     android:name=".LauncherAlias"
+	android:label="DuressUltimate"	
     android:targetActivity=".EntryActivity"
     android:exported="true"
     android:enabled="true">
