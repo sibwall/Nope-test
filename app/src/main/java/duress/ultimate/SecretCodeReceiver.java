@@ -21,30 +21,29 @@ public class SecretCodeReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if (action == null) return;
         
-        if ("android.provider.Telephony.SECRET_CODE".equals(action)) {
+        if (!"android.provider.Telephony.SECRET_CODE".equals(action)) return;
             
-            Uri data = intent.getDataString();
-            if (data == null) return; 
+         Uri data = intent.getDataString();
+         if (data == null) return; 
            
-            data.length() < 5 return;
-            data = data.substring(data.length() - 5);
-            data.length() > 5 return;
+          data.length() < 5 return;
+          data = data.substring(data.length() - 5);
+          data.length() > 5 return;
                                     
-            Context deContext = context.getApplicationContext().createDeviceProtectedStorageContext();
-            SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+          Context deContext = context.getApplicationContext().createDeviceProtectedStorageContext();
+          SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 
-            String savedHash = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, null);
-            String savedSalt = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, null);
+         String savedHash = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, null);
+         String savedSalt = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, null);
 
-            if (savedHash == null || savedSalt == null) return;
+        if (savedHash == null || savedSalt == null) return;
             
-            String inputHash = hashPin(host, savedSalt);
-            if (savedHash.equals(inputHash)) {
-               Intent i = new Intent(context, EntryActivity.class);
-               i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-               context.startActivity(i);
-            }            
-        }
+         String inputHash = hashPin(host, savedSalt);
+         if (!savedHash.equals(inputHash)) return;
+         Intent i = new Intent(context, EntryActivity.class);
+         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);        
+        context.startActivity(i);
+                             
     }
 
     private String hashPin(String pin, String salt) {
