@@ -25,7 +25,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: release.keystore
-          key: android-release-keystore-static-v3
+          key: android-release-keystore-static-v4
 
       - name: Generate Keystore if missing
         if: steps.keystore-cache.outputs.cache-hit != 'true'
@@ -49,29 +49,29 @@ jobs:
 
       - name: Align and Sign APK
         run: |
-          # Ищем исходный незащищенный/неподписанный APK
-          UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
+          INPUT_APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
           
-          # Выравнивание через zipalign из установленного Build-Tools
           BUILD_TOOLS_DIR=$(ls -d ${ANDROID_HOME}/build-tools/* | tail -n 1)
-          $BUILD_TOOLS_DIR/zipalign -v -p 4 "$UNSIGNED_APK" app-release-aligned.apk
           
-          # Подпись через apksigner с ОДИНАКОВЫМИ паролями (требование PKCS12)
+          $BUILD_TOOLS_DIR/zipalign -v -p 4 "$INPUT_APK" aligned.apk
+          
           $BUILD_TOOLS_DIR/apksigner sign \
             --ks release.keystore \
             --ks-pass pass:StaticStorePassword123 \
             --key-pass pass:StaticStorePassword123 \
             --ks-key-alias staticReleaseKey \
-            --out app-release-signed.apk \
-            app-release-aligned.apk
+            --out app-release.apk \
+            aligned.apk
+            
+          rm aligned.apk
 
       - name: Verify APK Signature
         run: |
           BUILD_TOOLS_DIR=$(ls -d ${ANDROID_HOME}/build-tools/* | tail -n 1)
-          $BUILD_TOOLS_DIR/apksigner verify --verbose app-release-signed.apk
+          $BUILD_TOOLS_DIR/apksigner verify --verbose app-release.apk
 
       - name: Upload Release APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: app-release-signed.apk
+          path: app-release.apk
