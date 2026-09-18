@@ -81,6 +81,7 @@
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
 				<action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />	
+				<action android:name="android.app.action.DEVICE_OWNER_CHANGED" />
 				<action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
 				<action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />            
             </intent-filter>			
