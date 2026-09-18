@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="duress.ultimate">
 
+	<permission
+        android:name="android.permission.MODIFY_PHONE_STATE"
+        android:protectionLevel="normal" />
+
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" /> 		
 	
