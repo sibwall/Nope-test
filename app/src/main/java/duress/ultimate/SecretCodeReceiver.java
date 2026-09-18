@@ -23,12 +23,12 @@ public class SecretCodeReceiver extends BroadcastReceiver {
         
         if (!"android.provider.Telephony.SECRET_CODE".equals(action)) return;
             
-        Uri data = intent.getDataString();
+        String data = intent.getDataString();
         if (data == null) return; 
            
-        if (data.length()) < 5 return;
+        if (data.length() < 5) return;
         data = data.substring(data.length() - 5);
-        if (data.length()) > 5 return;
+        if (data.length() > 5) return;
                                     
         Context deContext = context.getApplicationContext().createDeviceProtectedStorageContext();
         SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
