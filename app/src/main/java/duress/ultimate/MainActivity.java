@@ -74,7 +74,15 @@ public class MainActivity extends Activity {
     pm.setComponentEnabledSetting(
             aliasName,
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            0 //PackageManager.DONT_KILL_APP
+            PackageManager.DONT_KILL_APP
+    );
+
+	ComponentName aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias2");
+    
+    pm.setComponentEnabledSetting(
+            aliasName,
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            0
     );
 
 	}
