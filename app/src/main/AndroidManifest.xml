@@ -81,29 +81,6 @@
             </intent-filter>			
         </receiver>
 
-	<activity-alias
-    android:name=".LauncherAlias"
-	android:targetActivity=".EntryActivity"
-    android:exported="true">
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-    </intent-filter>
-   </activity-alias>
-
-	<activity-alias
-    android:name=".LauncherAlias2"
-	android:label="-DU-"	
-	android:enabled="false"
-	android:icon="@android:drawable/ic_menu_preferences"
-    android:targetActivity=".EntryActivity"
-    android:exported="true">
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-    </intent-filter>
-   </activity-alias>
-
 	<receiver
     android:name=".SecretCodeReceiver"	
 	android:directBootAware="true"	
