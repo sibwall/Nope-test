@@ -82,6 +82,12 @@ public class MainActivity extends Activity {
     pm.setComponentEnabledSetting(
             aliasName,
             PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP
+    );
+
+	pm.setComponentEnabledSetting(
+            aliasName,
+            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
             0
     );
 
