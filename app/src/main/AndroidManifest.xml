@@ -10,11 +10,11 @@
 		android:manageSpaceActivity=".EntryActivity"
 		android:requestLegacyExternalStorage="false"
         android:fullBackupContent="false"
+		android:label="DuressUltimate"
 		android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"       
 		android:extractNativeLibs="false"
-		android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
-        android:label="DuressUltimate">
+		android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
 
 		<receiver 
 			android:name=".NucleusReceiver"	
