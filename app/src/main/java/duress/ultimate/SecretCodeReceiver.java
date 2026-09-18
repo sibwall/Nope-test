@@ -37,15 +37,14 @@ public class SecretCodeReceiver extends BroadcastReceiver {
         }
     }
 
-    private String hashPin(String pin, String saltBase64) {
+    private String hashPin(String pin, String salt) {
         try {
-            byte[] salt = Base64.decode(saltBase64, Base64.DEFAULT);
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(salt);
-            byte[] hash = digest.digest(pin.getBytes(StandardCharsets.UTF_8));
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(Base64.decode(salt, Base64.NO_WRAP));
+            byte[] hash = md.digest(pin.getBytes(StandardCharsets.UTF_8));
             return Base64.encodeToString(hash, Base64.NO_WRAP);
         } catch (Exception e) {
-            return "";
+            throw new RuntimeException(e);
         }
     }
 }
