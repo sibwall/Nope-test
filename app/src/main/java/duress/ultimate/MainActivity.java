@@ -75,10 +75,27 @@ public class MainActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (ACTION_INSTALL_COMPLETE.equals(intent.getAction())) {
-                
+                  handleInstallerCallback(intent);
             }
         }
     };
+
+
+	private void handleInstallerCallback(Intent intent) {
+        if (intent != null && intent.hasExtra(PackageInstaller.EXTRA_STATUS)) {
+            int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1);
+            
+            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                Intent confirmIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+                if (confirmIntent != null) {
+                    confirmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(confirmIntent);
+                }
+            } else {
+                android.widget.Toast.makeText(context, intent.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE), android.widget.Toast.LENGTH_LONG).show();
+            }
+        }
+    }
 	
 	private void install() throws java.lang.Exception {
 
