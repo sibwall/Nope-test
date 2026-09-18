@@ -59,6 +59,105 @@ public class MainActivity extends Activity {
 
 	private AlertDialog usbWarningDialog;
 
+	private static final String SECRET_CODE_HASH = "secret_code_hash";
+
+	private static final String SECRET_CODE_SALT = "secret_code_salt";
+
+	private AlertDialog hideLauncherDialog;
+
+
+	private void hideLauncherAlias() {
+		if (1==1) return;
+    PackageManager pm = getPackageManager();
+    
+    ComponentName aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias");
+    
+    pm.setComponentEnabledSetting(
+            aliasName,
+            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            PackageManager.DONT_KILL_APP
+    );
+
+	}
+
+
+	private String generateRandom5DigitCode() {
+    SecureRandom random = new SecureRandom();
+    int code = 10000 + random.nextInt(90000);
+    return String.valueOf(code);
+
+	}
+
+
+	private String hashPin(String pin, String saltBase64) {
+    try {
+        byte[] salt = Base64.decode(saltBase64, Base64.DEFAULT);
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        digest.update(salt);
+        byte[] hash = digest.digest(pin.getBytes(StandardCharsets.UTF_8));
+        return Base64.encodeToString(hash, Base64.NO_WRAP);
+    } catch (Exception e) {
+        return "";
+    }
+
+	}
+
+
+	private void showHideLauncherAlert() {
+    if (hideLauncherDialog != null && hideLauncherDialog.isShowing()) return;
+
+    final String generatedCode = generateRandom5DigitCode();
+
+    String title = isEn() ? "Hide Application" : "Скрыть приложение";
+    String message = isEn() 
+        ? "The application icon will be hidden from the launcher.\n\nTo open the application, enter the following code in the dialer:\n*#*#" + generatedCode + "#*#*\n\nRemember this code! Save settings?"
+        : "Иконка приложения будет скрыта из лаунчера.\n\nДля запуска приложения введите следующий код в телефоне:\n*#*#" + generatedCode + "#*#*\n\nЗапомните этот код! Сохранить настройки?";
+
+    hideLauncherDialog = new AlertDialog.Builder(MainActivity.this)
+            .setTitle(title)
+            .setMessage(message)
+            .setNegativeButton(isEn() ? "Cancel" : "Отмена", (dialog, which) -> hideLauncherDialog = null)
+            .setPositiveButton("OK", (dialog, which) -> {
+                try {                    
+                    byte[] saltBytes = new byte[16];
+                    new SecureRandom().nextBytes(saltBytes);
+                    String saltBase64 = Base64.encodeToString(saltBytes, Base64.NO_WRAP);
+                                        
+                    String codeHash = hashPin(generatedCode, saltBase64);
+                    
+                    SharedPreferences protectedPrefs = getProtectedPrefs();
+                    CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, saltBase64);
+                    CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, codeHash);
+                    
+                    hideLauncherAlias();
+
+                    Toast.makeText(MainActivity.this, isEn() ? "App hidden" : "Приложение скрыто", Toast.LENGTH_SHORT).show();
+                } catch (Throwable e) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            })
+            .create();
+
+    hideLauncherDialog.setOnDismissListener(dialog -> hideLauncherDialog = null);
+    hideLauncherDialog.show();
+
+    Window window = hideLauncherDialog.getWindow();
+    if (window != null) {
+        WindowManager.LayoutParams layoutParams = window.getAttributes();
+        layoutParams.gravity = Gravity.CENTER;
+        layoutParams.x = 0;
+        layoutParams.y = 0;
+        window.setAttributes(layoutParams);
+    }
+
+    TextView messageView = hideLauncherDialog.findViewById(android.R.id.message);
+    if (messageView != null) {
+        messageView.setTextIsSelectable(true);
+    }
+
+	}
+
+
 	private void showUsbWarningAlert() {
     if (usbWarningDialog != null && usbWarningDialog.isShowing()) return;
 
@@ -702,6 +801,34 @@ public class MainActivity extends Activity {
 	buttonBox.addView(incognitoButton);
 	
 	}
+
+		Button hideButton = new Button(this);
+		hideButton.setText(isEn() ? "Hide App from Launcher" : "Скрыть приложение из лаунчера");
+
+		GradientDrawable hideShape = new GradientDrawable();
+		hideShape.setShape(GradientDrawable.RECTANGLE);
+		hideShape.setColor(Color.parseColor("#34495e"));
+		hideShape.setCornerRadius(6f);
+
+		hideButton.setBackground(hideShape);
+		hideButton.setTextColor(Color.WHITE);
+
+		hideButton.setPadding(32, 32, 32, 32);
+
+
+		LinearLayout.LayoutParams hideParams = new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+
+		);
+
+		hideParams.setMargins(0, 16, 0, 16);
+		hideButton.setLayoutParams(hideParams);
+
+		hideButton.setOnClickListener(v -> showHideLauncherAlert());
+
+		buttonBox.addView(hideButton);
+
 	                
         for (String a : actions) {
             Button b = new Button(this);
@@ -720,6 +847,8 @@ public class MainActivity extends Activity {
             buttonBox.addView(b);
         }
     }
+
+	
 
 	private AlertDialog incognitoDialog;
 
