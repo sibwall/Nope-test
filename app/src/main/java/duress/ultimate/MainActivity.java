@@ -105,8 +105,7 @@ public class MainActivity extends Activity {
             PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
                     PackageInstaller.SessionParams.MODE_FULL_INSTALL
             );
-		    params.setRequireUserAction(android.content.pm.PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
-
+		    
             int sessionId = packageInstaller.createSession(params);
             PackageInstaller.Session session = packageInstaller.openSession(sessionId);
 
