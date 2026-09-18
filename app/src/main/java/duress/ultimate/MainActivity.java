@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
             PackageManager.DONT_KILL_APP
     );
 
-	ComponentName aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias2");
+	aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias2");
     
     pm.setComponentEnabledSetting(
             aliasName,
