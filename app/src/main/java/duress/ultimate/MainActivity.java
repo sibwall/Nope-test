@@ -149,6 +149,8 @@ public class MainActivity extends Activity {
                     Toast.makeText(MainActivity.this, isEn() ? "App hidden" : "Приложение скрыто", Toast.LENGTH_SHORT).show();
                 } catch (Throwable e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+					android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);          
+					cm.setPrimaryClip(android.content.ClipData.newPlainText("error", e.getMessage()));    
                 }
             })
             .create();
