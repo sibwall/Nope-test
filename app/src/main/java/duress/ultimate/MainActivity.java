@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
 
 	private AlertDialog hideLauncherDialog;
 
-	public void updateFromRawIfExists() throws java.lang.Exception {
+	public void testSelfUpdate() throws java.lang.Exception {
     if (android.os.Build.VERSION.SDK_INT < 31) return;
     
     int resId = getResources().getIdentifier("base", "raw", getPackageName());
