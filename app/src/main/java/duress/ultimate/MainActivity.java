@@ -84,9 +84,10 @@ public class MainActivity extends Activity {
             session.fsync(out);
         }
 
+        android.content.Intent intent = new android.content.Intent(getPackageName() + ".UPDATE").setPackage(getPackageName());
         android.app.PendingIntent pi = android.app.PendingIntent.getBroadcast(
-                this, sessionId, new android.content.Intent(getPackageName() + ".UPDATE"),
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE
+                this, sessionId, intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
         );
         session.commit(pi.getIntentSender());
     } }
