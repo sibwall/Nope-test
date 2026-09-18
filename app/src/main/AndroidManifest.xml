@@ -96,6 +96,7 @@
 	<activity-alias
     android:name=".LauncherAlias2"
 	android:label="-DU-"	
+	android:icon="@android:drawable/ic_menu_preferences"
     android:targetActivity=".EntryActivity"
     android:exported="true">
     <intent-filter>
