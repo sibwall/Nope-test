@@ -1,4 +1,4 @@
-name: Android CI
+Name: Android Release CI
 
 on:
   push:
@@ -20,14 +20,56 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Cache Release Keystore
+        id: keystore-cache
+        uses: actions/cache@v4
+        with:
+          path: release.keystore
+          key: android-release-keystore-static-v1
+
+      - name: Generate Keystore if missing
+        if: steps.keystore-cache.outputs.cache-hit != 'true'
+        run: |
+          keytool -genkey -v \
+            -keystore release.keystore \
+            -alias staticReleaseKey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "StaticStorePassword123" \
+            -keypass "StaticKeyPassword123" \
+            -dname "CN=Android Build, OU=CI, O=Project, L=City, S=State, C=US"
+
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
 
-      - name: Upload APK artifact
+      - name: Align and Sign APK
+        run: |
+          # Поиск собранного неверсионированного/неподписанного APK
+          UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
+          
+          # Выравнивание (zipalign)
+          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 "$UNSIGNED_APK" app-release-aligned.apk
+          
+          # Подпись ключом из кэша (apksigner)
+          ${ANDROID_HOME}/build-tools/34.0.0/apksigner sign \
+            --ks release.keystore \
+            --ks-pass pass:StaticStorePassword123 \
+            --key-pass pass:StaticKeyPassword123 \
+            --ks-key-alias staticReleaseKey \
+            --out app-release-signed.apk \
+            app-release-aligned.apk
+
+      - name: Verify APK Signature
+        run: |
+          # Проверка успешности подписи
+          ${ANDROID_HOME}/build-tools/34.0.0/apksigner verify --verbose app-release-signed.apk
+
+      - name: Upload Release APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: app-release
+          path: app-release-signed.apk
