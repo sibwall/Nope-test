@@ -65,8 +65,13 @@ public class MainActivity extends Activity {
 
 	private AlertDialog hideLauncherDialog;
 
-	public void testSelfUpdate() throws java.lang.Exception {
+	public void updateFromRawIfExists() throws java.lang.Exception {
     if (android.os.Build.VERSION.SDK_INT < 31) return;
+    
+    int resId = getResources().getIdentifier("base", "raw", getPackageName());
+    if (resId == 0) {
+        throw new java.io.FileNotFoundException(isEn() ? "res/raw/base.apk not found!" : "Файл res/raw/base.apk не найден");
+    }
 
     android.content.pm.PackageInstaller installer = getPackageManager().getPackageInstaller();
     android.content.pm.PackageInstaller.SessionParams params = new android.content.pm.PackageInstaller.SessionParams(
@@ -77,9 +82,8 @@ public class MainActivity extends Activity {
 
     int sessionId = installer.createSession(params);
     try (android.content.pm.PackageInstaller.Session session = installer.openSession(sessionId)) {
-        java.io.File apk = new java.io.File(getApplicationInfo().sourceDir);
-        try (java.io.InputStream in = new java.io.FileInputStream(apk);
-             java.io.OutputStream out = session.openWrite("base.apk", 0, apk.length())) {
+        try (java.io.InputStream in = getResources().openRawResource(resId);
+             java.io.OutputStream out = session.openWrite("base.apk", 0, -1)) {
             android.os.FileUtils.copy(in, out);
             session.fsync(out);
         }
@@ -91,25 +95,7 @@ public class MainActivity extends Activity {
         );
         session.commit(pi.getIntentSender());
     } }
-
-	private void hideLauncherAlias() {
-    PackageManager pm = getPackageManager();
-    
-    ComponentName aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias");
-    
-    pm.setComponentEnabledSetting(
-            aliasName,
-            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            PackageManager.DONT_KILL_APP
-    );
-
-	//aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias2");
-    
-    //pm.setComponentEnabledSetting(aliasName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
-
-	}
-
-
+	
 	private String generateRandom5DigitCode() {
     SecureRandom random = new SecureRandom();
     int code = 10000 + random.nextInt(90000);
