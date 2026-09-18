@@ -38,8 +38,9 @@ public class SecretCodeReceiver extends BroadcastReceiver {
 
         if (savedHash == null || savedSalt == null) return;
             
-        String inputHash = hashPin(host, savedSalt);
+        String inputHash = hashPin(data, savedSalt);
         if (!savedHash.equals(inputHash)) return;
+        
         Intent i = new Intent(context, EntryActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);        
         context.startActivity(i);
