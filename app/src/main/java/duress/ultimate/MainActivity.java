@@ -67,7 +67,6 @@ public class MainActivity extends Activity {
 
 
 	private void hideLauncherAlias() {
-		if (1==1) return;
     PackageManager pm = getPackageManager();
     
     ComponentName aliasName = new ComponentName(this, "duress.ultimate.LauncherAlias");
@@ -87,22 +86,7 @@ public class MainActivity extends Activity {
     return String.valueOf(code);
 
 	}
-
-
-	private String hashPin(String pin, String saltBase64) {
-    try {
-        byte[] salt = Base64.decode(saltBase64, Base64.DEFAULT);
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        digest.update(salt);
-        byte[] hash = digest.digest(pin.getBytes(StandardCharsets.UTF_8));
-        return Base64.encodeToString(hash, Base64.NO_WRAP);
-    } catch (Exception e) {
-        return "";
-    }
-
-	}
-
-
+	
 	private void showHideLauncherAlert() {
     if (hideLauncherDialog != null && hideLauncherDialog.isShowing()) return;
 
