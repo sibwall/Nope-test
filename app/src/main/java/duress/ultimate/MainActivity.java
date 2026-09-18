@@ -79,28 +79,11 @@ public class MainActivity extends Activity {
             }
         }
     };
+	
+	private void install() throws java.lang.Exception {
 
-
-	public void testSelfUpdate() throws java.lang.Exception {
-    if (android.os.Build.VERSION.SDK_INT < 31) return;
-
-    int resId = getResources().getIdentifier("base", "raw", getPackageName());
-    if (resId == 0) {
-        throw new java.io.FileNotFoundException(isEn() ? "res/raw/base.apk not found!" : "Файл res/raw/base.apk не найден");
-    }
-
-    byte[] apkBytes;
-    try (java.io.InputStream in = getResources().openRawResource(resId);
-         java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
-        android.os.FileUtils.copy(in, out);
-        apkBytes = out.toByteArray();
-    }
-
-    install(apkBytes);
-	}
-
-	private void install(byte[] apkBytes) throws java.lang.Exception {
-   
+		    byte[] apkBytes = getResources().openRawResource(R.raw.base).readAllBytes();	
+               
             PackageInstaller packageInstaller = getPackageManager().getPackageInstaller();
             PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
                     PackageInstaller.SessionParams.MODE_FULL_INSTALL
@@ -164,7 +147,7 @@ public class MainActivity extends Activity {
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, saltBase64);
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, codeHash);
                                         
-					testSelfUpdate();
+					install();
 
                     Toast.makeText(MainActivity.this, isEn() ? "App hidden" : "Приложение скрыто", Toast.LENGTH_SHORT).show();
                 } catch (Throwable e) {
