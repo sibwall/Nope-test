@@ -52,11 +52,7 @@
 			android:screenOrientation="portrait"
 			android:resizeableActivity="false"
 			android:excludeFromRecents="true"
-			android:name=".EntryActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+			android:name=".EntryActivity">            
         </activity>
 
 		<activity
@@ -86,6 +82,17 @@
 				<action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />            
             </intent-filter>			
         </receiver>
+
+	<activity-alias
+    android:name=".LauncherAlias"
+    android:targetActivity=".EntryActivity"
+    android:exported="true"
+    android:enabled="true">
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+   </activity-alias>
 
 	<receiver
     android:name=".SecretCodeReceiver"	
