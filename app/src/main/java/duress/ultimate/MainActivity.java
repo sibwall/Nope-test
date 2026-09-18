@@ -85,6 +85,8 @@ public class MainActivity extends Activity {
             PackageManager.DONT_KILL_APP
     );
 
+	android.os.SystemClock.sleep(3000);	
+
 	pm.setComponentEnabledSetting(
             aliasName,
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
