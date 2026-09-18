@@ -1,5 +1,9 @@
 package duress.ultimate;
 
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.content.pm.PackageInstaller;
+import java.io.OutputStream;
 import android.app.ActivityManager;
 import android.app.admin.DeviceAdminInfo;
 import android.app.Activity;
