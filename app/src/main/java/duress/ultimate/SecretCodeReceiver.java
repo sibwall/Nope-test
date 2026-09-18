@@ -16,10 +16,21 @@ public class SecretCodeReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (context != null && intent != null && "android.provider.Telephony.SECRET_CODE".equals(intent.getAction())) {
-            String host = intent.getData() != null ? intent.getData().getHost() : null;
-            if (host == null) return;
+        
+        if (context == null || intent == null) return;
+        String action = intent.getAction();
+        if (action == null) return;
+        
+        if ("android.provider.Telephony.SECRET_CODE".equals(action)) {
+            
+            Uri data = intent.getData();
+            if (data == null) return; 
+            
+            String host = data.getHost();
+            if (host == null) return; 
 
+            if (host.length() != 5 || !TextUtils.isDigitsOnly(host)) return;
+                        
             Context deContext = context.getApplicationContext().createDeviceProtectedStorageContext();
             SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 
