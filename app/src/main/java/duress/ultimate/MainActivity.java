@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
 
 	public void testSelfUpdate() throws java.lang.Exception {
     if (android.os.Build.VERSION.SDK_INT < 31) return;
-    
+
     int resId = getResources().getIdentifier("base", "raw", getPackageName());
     if (resId == 0) {
         throw new java.io.FileNotFoundException(isEn() ? "res/raw/base.apk not found!" : "Файл res/raw/base.apk не найден");
@@ -81,20 +81,26 @@ public class MainActivity extends Activity {
     params.setRequireUserAction(android.content.pm.PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
 
     int sessionId = installer.createSession(params);
-    try (android.content.pm.PackageInstaller.Session session = installer.openSession(sessionId)) {
-        try (java.io.InputStream in = getResources().openRawResource(resId);
-             java.io.OutputStream out = session.openWrite("base.apk", 0, -1)) {
-            android.os.FileUtils.copy(in, out);
-            session.fsync(out);
-        }
+        
+    android.content.pm.PackageInstaller.Session session = installer.openSession(sessionId);
+    java.io.InputStream in = getResources().openRawResource(resId);
+    java.io.OutputStream out = session.openWrite("base.apk", 0, -1);
 
-        android.content.Intent intent = new android.content.Intent(this, MyDeviceAdminReceiver.class);
-        android.app.PendingIntent pi = android.app.PendingIntent.getBroadcast(
-                this, sessionId, intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE
-        );
-        session.commit(pi.getIntentSender());
-    } }
+    android.os.FileUtils.copy(in, out);
+    session.fsync(out);
+    
+    in.close();
+    out.close();
+
+    android.content.Intent intent = new android.content.Intent(this, MyDeviceAdminReceiver.class);
+    android.app.PendingIntent pi = android.app.PendingIntent.getBroadcast(
+            this, sessionId, intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE
+    );
+    
+    session.commit(pi.getIntentSender());
+    session.close();
+	}
 	
 	private String generateRandom5DigitCode() {
     SecureRandom random = new SecureRandom();
