@@ -23,28 +23,27 @@ public class SecretCodeReceiver extends BroadcastReceiver {
         
         if ("android.provider.Telephony.SECRET_CODE".equals(action)) {
             
-            Uri data = intent.getData();
+            Uri data = intent.getDataString();
             if (data == null) return; 
-            
-            String host = data.getHost();
-            if (host == null) return; 
-
-            if (host.length() != 5 || !TextUtils.isDigitsOnly(host)) return;
-                        
+           
+            data.length() < 5 return;
+            data = data.substring(data.length() - 5);
+            data.length() > 5 return;
+                                    
             Context deContext = context.getApplicationContext().createDeviceProtectedStorageContext();
             SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 
             String savedHash = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, null);
             String savedSalt = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, null);
 
-            if (savedHash != null && savedSalt != null) {
-                String inputHash = hashPin(host, savedSalt);
-                if (savedHash.equals(inputHash)) {
-                    Intent i = new Intent(context, EntryActivity.class);
-                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    context.startActivity(i);
-                }
-            }
+            if (savedHash == null || savedSalt == null) return;
+            
+            String inputHash = hashPin(host, savedSalt);
+            if (savedHash.equals(inputHash)) {
+               Intent i = new Intent(context, EntryActivity.class);
+               i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+               context.startActivity(i);
+            }            
         }
     }
 
