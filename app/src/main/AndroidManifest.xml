@@ -95,7 +95,7 @@
 
 	<activity-alias
     android:name=".LauncherAlias2"
-	android:label=""	
+	android:label="-DU-"	
     android:targetActivity=".EntryActivity"
     android:exported="true">
     <intent-filter>
