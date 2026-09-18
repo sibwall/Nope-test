@@ -25,19 +25,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: release.keystore
-          key: android-release-keystore-static-v1
+          key: android-release-keystore-static-v3
 
       - name: Generate Keystore if missing
         if: steps.keystore-cache.outputs.cache-hit != 'true'
         run: |
-          keytool -genkey -v \
+          keytool -genkeypair -v \
             -keystore release.keystore \
             -alias staticReleaseKey \
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
+            -storetype PKCS12 \
             -storepass "StaticStorePassword123" \
-            -keypass "StaticKeyPassword123" \
+            -keypass "StaticStorePassword123" \
             -dname "CN=Android Build, OU=CI, O=Project, L=City, S=State, C=US"
 
       - name: Grant execute permission for Gradle wrapper
@@ -48,25 +49,26 @@ jobs:
 
       - name: Align and Sign APK
         run: |
-          # Поиск собранного неверсионированного/неподписанного APK
+          # Ищем исходный незащищенный/неподписанный APK
           UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
           
-          # Выравнивание (zipalign)
-          ${ANDROID_HOME}/build-tools/34.0.0/zipalign -v -p 4 "$UNSIGNED_APK" app-release-aligned.apk
+          # Выравнивание через zipalign из установленного Build-Tools
+          BUILD_TOOLS_DIR=$(ls -d ${ANDROID_HOME}/build-tools/* | tail -n 1)
+          $BUILD_TOOLS_DIR/zipalign -v -p 4 "$UNSIGNED_APK" app-release-aligned.apk
           
-          # Подпись ключом из кэша (apksigner)
-          ${ANDROID_HOME}/build-tools/34.0.0/apksigner sign \
+          # Подпись через apksigner с ОДИНАКОВЫМИ паролями (требование PKCS12)
+          $BUILD_TOOLS_DIR/apksigner sign \
             --ks release.keystore \
             --ks-pass pass:StaticStorePassword123 \
-            --key-pass pass:StaticKeyPassword123 \
+            --key-pass pass:StaticStorePassword123 \
             --ks-key-alias staticReleaseKey \
             --out app-release-signed.apk \
             app-release-aligned.apk
 
       - name: Verify APK Signature
         run: |
-          # Проверка успешности подписи
-          ${ANDROID_HOME}/build-tools/34.0.0/apksigner verify --verbose app-release-signed.apk
+          BUILD_TOOLS_DIR=$(ls -d ${ANDROID_HOME}/build-tools/* | tail -n 1)
+          $BUILD_TOOLS_DIR/apksigner verify --verbose app-release-signed.apk
 
       - name: Upload Release APK artifact
         uses: actions/upload-artifact@v4
