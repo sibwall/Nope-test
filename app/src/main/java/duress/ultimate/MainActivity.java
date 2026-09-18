@@ -50,6 +50,8 @@ public class MainActivity extends Activity {
     private static final String APP_PIN_SALT = "app_pin_salt";
     private static final String CLOSE_WARNINGS = "close_warnings";
 
+	private static final String ACTION_INSTALL_COMPLETE = "com.fire.wall.INSTALL_COMPLETE";
+
     private TextView text;
 	private AlertDialog dialog;
 	private AlertDialog deviceOwnerDialog;
@@ -68,6 +70,16 @@ public class MainActivity extends Activity {
 	private static final String SECRET_CODE_SALT = "secret_code_salt";
 
 	private AlertDialog hideLauncherDialog;
+
+	private final BroadcastReceiver installStatusReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (ACTION_INSTALL_COMPLETE.equals(intent.getAction())) {
+                
+            }
+        }
+    };
+
 
 	public void testSelfUpdate() throws java.lang.Exception {
     if (android.os.Build.VERSION.SDK_INT < 31) return;
@@ -292,6 +304,16 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER);
         root.setPadding(64, 64, 64, 64);
+
+		IntentFilter statusFilter = new IntentFilter(ACTION_INSTALL_COMPLETE);
+        
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(packageReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            registerReceiver(installStatusReceiver, statusFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(packageReceiver, filter);
+            registerReceiver(installStatusReceiver, statusFilter);
+        }
 
         text = new TextView(this);
         text.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -1286,6 +1308,10 @@ public class MainActivity extends Activity {
         hideLauncherDialog.dismiss();        
 		}
 		hideLauncherDialog = null;
+
+		try {
+            if (installStatusReceiver != null) unregisterReceiver(installStatusReceiver);
+        } catch (Throwable e) {}
 		
         super.onDestroy();		
     }
