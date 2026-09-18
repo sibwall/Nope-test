@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
                     startActivity(confirmIntent);
                 }
             } else {
-                android.widget.Toast.makeText(context, intent.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE), android.widget.Toast.LENGTH_LONG).show();
+                android.widget.Toast.makeText(this, intent.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE), android.widget.Toast.LENGTH_LONG).show();
             }
         }
     }
