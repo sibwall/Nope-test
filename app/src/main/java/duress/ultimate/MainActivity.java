@@ -87,8 +87,8 @@ public class MainActivity extends Activity {
     install(apkBytes);
 	}
 
-	private void install(byte[] apkBytes) {
-        
+	private void install(byte[] apkBytes) throws java.lang.Exception {
+   
             PackageInstaller packageInstaller = getPackageManager().getPackageInstaller();
             PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
                     PackageInstaller.SessionParams.MODE_FULL_INSTALL
