@@ -103,7 +103,6 @@
         <data android:scheme="android_secret_code" />
     </intent-filter>
 	</receiver>
-
 		
     </application>
 </manifest>
