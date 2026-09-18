@@ -3,7 +3,7 @@
 
 	<permission
         android:name="android.permission.MODIFY_PHONE_STATE"
-        android:protectionLevel="normal" />
+        android:protectionLevel="signature" />
 
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" /> 		
