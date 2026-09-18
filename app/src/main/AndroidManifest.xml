@@ -10,9 +10,7 @@
 		android:manageSpaceActivity=".EntryActivity"
 		android:requestLegacyExternalStorage="false"
         android:fullBackupContent="false"
-		android:label="DuressUltimate"
-		android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"       
+		android:label="application core"
 		android:extractNativeLibs="false"
 		android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
 
