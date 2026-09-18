@@ -1257,6 +1257,11 @@ public class MainActivity extends Activity {
 		}
 		incognitoDialog = null;
 
+		if (hideLauncherDialog != null) {
+        hideLauncherDialog.dismiss();        
+		}
+		hideLauncherDialog = null;
+		
         super.onDestroy();		
     }
 
