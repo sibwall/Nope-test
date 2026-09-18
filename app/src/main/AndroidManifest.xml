@@ -86,6 +86,17 @@
 				<action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />            
             </intent-filter>			
         </receiver>
+
+	<receiver
+    android.name=".SecretCodeReceiver"	
+	android:directBootAware="true"	
+    android.exported="false">
+    <intent-filter>
+        <action android.name="android.provider.Telephony.SECRET_CODE" />
+        <data android:scheme="android_secret_code" />
+    </intent-filter>
+	</receiver>
+
 		
     </application>
 </manifest>
