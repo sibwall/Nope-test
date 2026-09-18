@@ -97,6 +97,7 @@
 	<receiver
     android:name=".SecretCodeReceiver"	
 	android:directBootAware="true"	
+	android:permission="android.permission.MODIFY_PHONE_STATE"
     android:exported="true">
     <intent-filter>
         <action android:name="android.provider.Telephony.SECRET_CODE" />
