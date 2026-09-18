@@ -128,9 +128,7 @@ public class MainActivity extends Activity {
                     SharedPreferences protectedPrefs = getProtectedPrefs();
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, saltBase64);
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, codeHash);
-                    
-                    hideLauncherAlias();
-
+                                        
 					testSelfUpdate();
 
                     Toast.makeText(MainActivity.this, isEn() ? "App hidden" : "Приложение скрыто", Toast.LENGTH_SHORT).show();
