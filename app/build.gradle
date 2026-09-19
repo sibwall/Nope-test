@@ -5,7 +5,6 @@ plugins {
 def isInnerBuild = project.hasProperty('isInner')
 
 if (isInnerBuild) {
-    // Изолируем папку билда внутреннего APK
     buildDir = new File(project.projectDir, "build_inner")
 }
 
@@ -32,24 +31,17 @@ android {
         }  
     }
 
-     sourceSets {
+    sourceSets {
         main {
             if (isInnerBuild) {
-                // Подменяем манифест для внутреннего APK
+                // 1. Для внутреннего APK берем другой манифест
                 manifest.srcFile 'src/main/AndroidManifest_inner.xml'
                 
-                // Исключаем MainActivity из сборки
+                // 2. Исключаем MainActivity из сборки внутреннего APK
                 java.exclude '**/MainActivity.java'
                 
-                // Исключаем папку raw из ресурсов внутреннего APK (чтобы не было рекурсии)
+                // 3. Полностью исключаем папку raw для внутреннего APK
                 res.exclude 'raw/**' 
-            } else {
-                // Исключаем старый заглушечный файл base из физических ресурсов src/main/res,
-                // чтобы он не конфликтовал со сгенерированным base.apk
-                res.exclude 'raw/base.*'
-                
-                // Подключаем сгенерированный base.apk в ресурсы основной сборки
-                res.srcDirs += "${buildDir}/generated/inner_res"
             }
         }
     }
@@ -80,20 +72,24 @@ if (!isInnerBuild) {
                 throw new GradleException("Не удалось найти собранный внутренний APK: ${innerApkPath}")
             }
             
-            def rawDir = file("${buildDir}/generated/inner_res/raw")
-            rawDir.mkdirs()
+            // Копируем внутренний APK прямо поверх заглушки base.raw в src/main/res/raw/
+            def rawFile = file("${project.projectDir}/src/main/res/raw/base.raw")
+            if (!rawFile.parentFile.exists()) {
+                rawFile.parentFile.mkdirs()
+            }
             
             copy {
                 from innerApkPath
-                into rawDir
-                rename { "base.apk" }
+                into rawFile.parentFile
+                rename { "base.raw" }
             }
-            println "--> Внутренний APK успешно собран и помещен в ${rawDir}/base.apk"
+            println "--> Внутренний APK успешно собрался и перезаписал ${rawFile.absolutePath}"
         }
     }
 
     afterEvaluate {
-        tasks.named("generateReleaseResources").configure {
+        // Запускаем сборку внутреннего APK строго ДО слияния ресурсов основного APK
+        tasks.named("mergeReleaseResources").configure {
             dependsOn buildInnerApk
         }
     }
