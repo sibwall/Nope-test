@@ -1,90 +1,31 @@
 plugins {
-    id 'com.android.application'
-}
-
-def isInnerBuild = project.hasProperty('isInner')
-
-if (isInnerBuild) {
-    buildDir = new File(project.projectDir, "build_inner")
+id 'com.android.application'
 }
 
 android {
-    namespace "duress.ultimate"
-    compileSdk 34
+namespace "duress.ultimate"
+compileSdk 34
 
-    lint {
-        checkReleaseBuilds false
-    }
+lint {
+checkReleaseBuilds false
+}
 
-    defaultConfig {  
-        applicationId "duress.ultimate"  
-        minSdk 29
-        targetSdk 37
-        versionCode 18
-        versionName "18.0"  
+defaultConfig {  
+    applicationId "duress.ultimate"  
+    minSdk 29
+    targetSdk 37
+    versionCode 17
+    versionName "17.0"  
+}  
+
+buildTypes {  
+    release {  
+        minifyEnabled false  
+        shrinkResources false  
     }  
+}
 
-    buildTypes {  
-        release {  
-            minifyEnabled false  
-            shrinkResources false  
-        }  
-    }
-
-    sourceSets {
-        main {
-            if (isInnerBuild) {
-                
-                manifest.srcFile 'src/main/AndroidManifest_inner.xml'
-                
-                java.exclude '**/MainActivity.java'
-                
-                res.exclude 'raw/**' 
-            }
-        }
-    }
 }
 
 dependencies {
-    
-}
-
-if (!isInnerBuild) {
-    task buildInnerApk(type: Exec) {
-        group = "Build"
-        workingDir project.rootDir 
-        
-        def isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
-        def gradlew = isWindows ? "gradlew.bat" : "./gradlew"
-        
-        commandLine gradlew, ":${project.name}:assembleRelease", "-PisInner=true"
-        
-        doLast {
-            def innerApkPath = file("${project.projectDir}/build_inner/outputs/apk/release/app-release.apk")
-            if (!innerApkPath.exists()) {
-                innerApkPath = file("${project.projectDir}/build_inner/outputs/apk/release/app-release-unsigned.apk")
-            }
-
-            if (!innerApkPath.exists()) {
-                throw new GradleException("Not found: ${innerApkPath}")
-            }
-            
-            def rawFile = file("${project.projectDir}/src/main/res/raw/base.raw")
-            if (!rawFile.parentFile.exists()) {
-                rawFile.parentFile.mkdirs()
-            }
-            
-            copy {
-                from innerApkPath
-                into rawFile.parentFile
-                rename { "base.raw" }
-            }            
-        }
-    }
-
-    afterEvaluate {
-        tasks.named("mergeReleaseResources").configure {
-            dependsOn buildInnerApk
-        }
-    }
 }
