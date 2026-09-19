@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.GridLayout;
@@ -25,52 +26,66 @@ public class CalculatorActivity extends Activity {
     private static final String SECRET_CODE_SALT = "secret_code_salt";
 
     private TextView display;
-    private String currentInput = "";
-    private String operator = "";
-    private double firstOperand = 0;
+    private StringBuilder currentInput;
+    private String operator;
+    private double firstOperand;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.parseColor("#F5F5F5"));
+
+        currentInput = new StringBuilder();
+        operator = "";
+        firstOperand = 0.0;
+
+        LinearLayout rootLayout = new LinearLayout(this);
+        rootLayout.setOrientation(LinearLayout.VERTICAL);
+        rootLayout.setBackgroundColor(Color.parseColor("#FAFAFA"));
+        rootLayout.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
 
         display = new TextView(this);
         display.setText("0");
-        display.setTextSize(TypedValue.COMPLEX_UNIT_SP, 48);
+        display.setTextSize(TypedValue.COMPLEX_UNIT_SP, 56);
         display.setGravity(Gravity.BOTTOM | Gravity.END);
-        display.setPadding(40, 40, 40, 40);
-        display.setTextColor(Color.BLACK);
-        
+        display.setPadding(48, 48, 48, 48);
+        display.setTextColor(Color.parseColor("#212121"));
+
         LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f);
-        root.addView(display, displayParams);
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1.0f
+        );
+        rootLayout.addView(display, displayParams);
 
-        GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(4);
-        grid.setRowCount(4);
-        
+        GridLayout gridLayout = new GridLayout(this);
+        gridLayout.setColumnCount(4);
+        gridLayout.setRowCount(4);
+
         LinearLayout.LayoutParams gridParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        gridParams.bottomMargin = 20;
-        root.addView(grid, gridParams);
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        gridParams.setMargins(16, 16, 16, 16);
+        rootLayout.addView(gridLayout, gridParams);
 
-        String[] buttons = {
+        String[] buttonLabels = {
                 "7", "8", "9", "÷",
                 "4", "5", "6", "×",
                 "1", "2", "3", "−",
                 "C", "0", "=", "+"
         };
 
-        for (int i = 0; i < buttons.length; i++) {
-            String btnText = buttons[i];
-            Button btn = new Button(this);
-            btn.setText(btnText);
-            btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
-            
+        for (int i = 0; i < buttonLabels.length; i++) {
+            final String label = buttonLabels[i];
+            Button button = new Button(this);
+            button.setText(label);
+            button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+            button.setTextColor(Color.parseColor("#212121"));
+            button.setBackgroundColor(Color.parseColor("#E0E0E0"));
+
             int row = i / 4;
             int col = i % 4;
 
@@ -81,97 +96,128 @@ public class CalculatorActivity extends Activity {
             params.width = 0;
             params.height = 0;
             params.setMargins(8, 8, 8, 8);
-            btn.setLayoutParams(params);
+            button.setLayoutParams(params);
 
-            btn.setOnClickListener(v -> handleButtonClick(btnText));
-            grid.addView(btn);
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    handleButtonClick(label);
+                }
+            });
+
+            gridLayout.addView(button);
         }
 
-        setContentView(root);
+        setContentView(rootLayout);
     }
 
     private void handleButtonClick(String value) {
         if (value.matches("[0-9]")) {
-            if (currentInput.equals("0")) currentInput = "";
-            currentInput += value;
-            display.setText(currentInput);
-            
+            if (currentInput.toString().equals("0")) {
+                currentInput.setLength(0);
+            }
+            currentInput.append(value);
+            display.setText(currentInput.toString());
         } else if (value.matches("[+−×÷]")) {
-            if (!currentInput.isEmpty()) {
-                firstOperand = Double.parseDouble(currentInput);
+            if (currentInput.length() > 0) {
+                firstOperand = Double.parseDouble(currentInput.toString());
                 operator = value;
-                currentInput = "";
+                currentInput.setLength(0);
                 display.setText(operator);
             }
-            
         } else if (value.equals("C")) {
-            currentInput = "";
+            currentInput.setLength(0);
             operator = "";
-            firstOperand = 0;
+            firstOperand = 0.0;
             display.setText("0");
-            
         } else if (value.equals("=")) {
-            if (checkSecretCode(currentInput)) {
-                currentInput = "";
+            if (checkSecretCode(currentInput.toString())) {
+                currentInput.setLength(0);
                 display.setText("0");
                 return;
             }
 
-            if (!currentInput.isEmpty() && !operator.isEmpty()) {
-                double secondOperand = Double.parseDouble(currentInput);
-                double result = 0;
+            if (currentInput.length() > 0 && !operator.isEmpty()) {
+                double secondOperand = Double.parseDouble(currentInput.toString());
+                double result = 0.0;
 
                 switch (operator) {
-                    case "+": result = firstOperand + secondOperand; break;
-                    case "−": result = firstOperand - secondOperand; break;
-                    case "×": result = firstOperand * secondOperand; break;
-                    case "÷": 
-                        if (secondOperand != 0) result = firstOperand / secondOperand; 
+                    case "+":
+                        result = firstOperand + secondOperand;
+                        break;
+                    case "−":
+                        result = firstOperand - secondOperand;
+                        break;
+                    case "×":
+                        result = firstOperand * secondOperand;
+                        break;
+                    case "÷":
+                        if (secondOperand != 0.0) {
+                            result = firstOperand / secondOperand;
+                        }
                         break;
                 }
 
-                String resultStr = (result % 1 == 0) ? String.valueOf((long) result) : String.valueOf(result);
-                display.setText(resultStr);
-                
-                currentInput = resultStr;
+                String resultString;
+                if (result % 1.0 == 0.0) {
+                    resultString = String.valueOf((long) result);
+                } else {
+                    resultString = String.valueOf(result);
+                }
+
+                display.setText(resultString);
+                currentInput.setLength(0);
+                currentInput.append(resultString);
                 operator = "";
             }
         }
     }
 
     private boolean checkSecretCode(String data) {
-        if (data == null) return false; 
-           
-        if (data.length() < 5) return false;
+        if (data == null) {
+            return false;
+        }
+
+        if (data.length() < 5) {
+            return false;
+        }
+
         data = data.substring(data.length() - 5);
-        if (data.length() > 5) return false;
-                                    
+
+        if (data.length() > 5) {
+            return false;
+        }
+
         Context deContext = getApplicationContext().createDeviceProtectedStorageContext();
         SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 
-        String savedHash = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, null);
-        String savedSalt = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, null);
+        String savedHash = dePrefs.getString(SECRET_CODE_HASH, null);
+        String savedSalt = dePrefs.getString(SECRET_CODE_SALT, null);
 
-        if (savedHash == null || savedSalt == null) return false;
-            
+        if (savedHash == null || savedSalt == null) {
+            return false;
+        }
+
         String inputHash = hashPin(data, savedSalt);
-        if (!savedHash.equals(inputHash)) return false;
-        
-        Intent i = new Intent(this, EntryActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);        
-        startActivity(i);
-        
+        if (!savedHash.equals(inputHash)) {
+            return false;
+        }
+
+        Intent intent = new Intent(this, EntryActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+
         return true;
     }
 
     private String hashPin(String pin, String salt) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(Base64.decode(salt, Base64.NO_WRAP));
-            byte[] hash = md.digest(pin.getBytes(StandardCharsets.UTF_8));
-            return Base64.encodeToString(hash, Base64.NO_WRAP);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            digest.update(Base64.decode(salt, Base64.NO_WRAP));
+            byte[] hashBytes = digest.digest(pin.getBytes(StandardCharsets.UTF_8));
+            return Base64.encodeToString(hashBytes, Base64.NO_WRAP);
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
         }
     }
 }
