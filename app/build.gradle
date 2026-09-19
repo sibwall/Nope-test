@@ -32,19 +32,23 @@ android {
         }  
     }
 
-    sourceSets {
+     sourceSets {
         main {
             if (isInnerBuild) {
-                // 1. Подменяем манифест для внутреннего APK
+                // Подменяем манифест для внутреннего APK
                 manifest.srcFile 'src/main/AndroidManifest_inner.xml'
                 
-                // 2. ПРОСТО ИСКЛЮЧАЕМ MainActivity из сборки
+                // Исключаем MainActivity из сборки
                 java.exclude '**/MainActivity.java'
                 
-                // 3. Запрещаем включать папку raw во внутренний APK
+                // Исключаем папку raw из ресурсов внутреннего APK (чтобы не было рекурсии)
                 res.exclude 'raw/**' 
             } else {
-                // 4. Папка с внутренним base.apk добавляется ТОЛЬКО во внешнюю сборку
+                // Исключаем старый заглушечный файл base из физических ресурсов src/main/res,
+                // чтобы он не конфликтовал со сгенерированным base.apk
+                res.exclude 'raw/base.*'
+                
+                // Подключаем сгенерированный base.apk в ресурсы основной сборки
                 res.srcDirs += "${buildDir}/generated/inner_res"
             }
         }
