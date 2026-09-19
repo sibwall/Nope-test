@@ -344,10 +344,10 @@ public class CalculatorActivity extends Activity {
             if (unary) return;
 
             if (op.equals("−") && (last == '×' || last == '÷')) {
-                committed += op; // 5×−3
+                committed += op;
                 return;
             }
-            committed = committed.substring(0, n - 1) + op; // замена оператора
+            committed = committed.substring(0, n - 1) + op;
             return;
         }
         
