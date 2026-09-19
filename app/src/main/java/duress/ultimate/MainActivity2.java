@@ -35,7 +35,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Locale;
 
-public class MainActivity extends Activity {
+public class MainActivity2 extends Activity {
 
     private static final String PREFS = "prefs";
     private static final String CE_PREFS = "ce_prefs";
