@@ -8,7 +8,6 @@
     <application
 		android:allowBackup="false"
 		android:debuggable="false"				
-		android:manageSpaceActivity=".EntryActivity"
 		android:requestLegacyExternalStorage="false"
         android:fullBackupContent="false"
 		android:label="DuressUltimate"
