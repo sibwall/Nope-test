@@ -4,16 +4,23 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
+import android.content.res.ColorStateList;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
@@ -23,114 +30,565 @@ public class CalculatorActivity extends Activity {
     private static final String SECRET_CODE_HASH = "secret_code_hash";
     private static final String SECRET_CODE_SALT = "secret_code_salt";
 
-    private TextView display;
+    // ---- Палитра (как в Google Calculator: голубой + серый) ----
+    private static final int COLOR_BG             = 0xFFFFFFFF;
+    private static final int COLOR_TEXT           = 0xFF202124;
+    private static final int COLOR_TEXT_SECONDARY = 0xFF5F6368;
+    private static final int COLOR_ERROR          = 0xFFD93025;
+
+    private static final int COLOR_DIGIT_BG   = 0xFFF1F3F4; // светло-серый
+    private static final int COLOR_FUNC_BG    = 0xFFDADCE0; // серый (AC, ( ), %, ⌫)
+    private static final int COLOR_OP_BG      = 0xFFD2E3FC; // светло-голубой (÷ × − +)
+    private static final int COLOR_EQUALS_BG  = 0xFF1A73E8; // насыщенный голубой (=)
+    private static final int COLOR_BLUE_TEXT  = 0xFF1967D2;
+
+    private static final int MAX_NUMBER_LENGTH = 15;
+
+    private TextView expressionView;
+    private TextView resultView;
+
+    /** Всё, что уже зафиксировано в выражении (без числа, которое сейчас вводится). */
+    private String committed = "";
+    /** Число, которое вводится прямо сейчас (именно оно проверяется как секретный код). */
     private String currentInput = "";
-    private String operator = "";
-    private double firstOperand = 0;
+    /** Выражение, показанное после нажатия "=". */
+    private String lastExpression = "";
+    private boolean justEvaluated = false;
+    private boolean showError = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
+        if (getActionBar() != null) getActionBar().hide();
+
+        getWindow().setStatusBarColor(COLOR_BG);
+        getWindow().setNavigationBarColor(COLOR_BG);
+        View decor = getWindow().getDecorView();
+        int flags = decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        if (Build.VERSION.SDK_INT >= 26) {
+            flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        }
+        decor.setSystemUiVisibility(flags);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.parseColor("#F5F5F5"));
+        root.setBackgroundColor(COLOR_BG);
+        root.setFitsSystemWindows(true);
 
-        display = new TextView(this);
-        display.setText("0");
-        display.setTextSize(TypedValue.COMPLEX_UNIT_SP, 48);
-        display.setGravity(Gravity.BOTTOM | Gravity.END);
-        display.setPadding(40, 40, 40, 40);
-        display.setTextColor(Color.BLACK);
-        
-        LinearLayout.LayoutParams displayParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f);
-        root.addView(display, displayParams);
+        // ---- Дисплей ----
+        LinearLayout displayBox = new LinearLayout(this);
+        displayBox.setOrientation(LinearLayout.VERTICAL);
+        displayBox.setGravity(Gravity.BOTTOM | Gravity.END);
+        displayBox.setPadding(dp(28), dp(16), dp(28), dp(20));
+        root.addView(displayBox, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
-        GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(4);
-        grid.setRowCount(4);
-        
-        LinearLayout.LayoutParams gridParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        gridParams.bottomMargin = 20;
-        root.addView(grid, gridParams);
+        expressionView = new TextView(this);
+        expressionView.setGravity(Gravity.END);
+        expressionView.setTextColor(COLOR_TEXT);
+        expressionView.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        displayBox.addView(expressionView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        String[] buttons = {
-                "7", "8", "9", "÷",
-                "4", "5", "6", "×",
-                "1", "2", "3", "−",
-                "C", "0", "=", "+"
+        resultView = new TextView(this);
+        resultView.setGravity(Gravity.END);
+        resultView.setTextColor(COLOR_TEXT_SECONDARY);
+        resultView.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
+        LinearLayout.LayoutParams resultParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        resultParams.topMargin = dp(4);
+        displayBox.addView(resultView, resultParams);
+
+        // ---- Клавиатура: полная сетка 5 x 4 ----
+        LinearLayout keypad = new LinearLayout(this);
+        keypad.setOrientation(LinearLayout.VERTICAL);
+        keypad.setPadding(dp(12), dp(8), dp(12), dp(16));
+        root.addView(keypad, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.6f));
+
+        String[][] rows = {
+                {"AC", "( )", "%", "÷"},
+                {"7",  "8",   "9", "×"},
+                {"4",  "5",   "6", "−"},
+                {"1",  "2",   "3", "+"},
+                {"0",  ".",   "⌫", "="}
         };
 
-        for (String btnText : buttons) {
-            Button btn = new Button(this);
-            btn.setText(btnText);
-            btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
-            
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 0;
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-            params.setMargins(8, 8, 8, 8);
-            btn.setLayoutParams(params);
+        for (String[] row : rows) {
+            LinearLayout line = new LinearLayout(this);
+            line.setOrientation(LinearLayout.HORIZONTAL);
+            keypad.addView(line, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
-            btn.setOnClickListener(v -> handleButtonClick(btnText));
-            grid.addView(btn);
+            for (String label : row) {
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
+                        0, ViewGroup.LayoutParams.MATCH_PARENT, 1.0f);
+                p.setMargins(dp(4), dp(4), dp(4), dp(4));
+                line.addView(createButton(label), p);
+            }
         }
 
         setContentView(root);
+        refresh();
     }
 
-    private void handleButtonClick(String value) {
-        if (value.matches("[0-9]")) {
-            if (currentInput.equals("0")) currentInput = "";
-            currentInput += value;
-            display.setText(currentInput);
-            
-        } else if (value.matches("[+−×÷]")) {
-            if (!currentInput.isEmpty()) {
-                firstOperand = Double.parseDouble(currentInput);
-                operator = value;
-                currentInput = "";
-                display.setText(operator);
-            }
-            
-        } else if (value.equals("C")) {
-            currentInput = "";
-            operator = "";
-            firstOperand = 0;
-            display.setText("0");
-            
-        } else if (value.equals("=")) {
-            if (checkSecretCode(currentInput)) {
-                currentInput = "";
-                display.setText("0");
-                return;
-            }
+    // =====================================================================
+    //  UI helpers
+    // =====================================================================
 
-            if (!currentInput.isEmpty() && !operator.isEmpty()) {
-                double secondOperand = Double.parseDouble(currentInput);
-                double result = 0;
+    private Button createButton(final String label) {
+        Button btn = new Button(this);
+        btn.setText(label);
+        btn.setAllCaps(false);
+        btn.setStateListAnimator(null);
+        btn.setMinWidth(0);
+        btn.setMinHeight(0);
+        btn.setMinimumWidth(0);
+        btn.setMinimumHeight(0);
+        btn.setPadding(0, 0, 0, 0);
+        btn.setGravity(Gravity.CENTER);
+        btn.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
 
-                switch (operator) {
-                    case "+": result = firstOperand + secondOperand; break;
-                    case "−": result = firstOperand - secondOperand; break;
-                    case "×": result = firstOperand * secondOperand; break;
-                    case "÷": 
-                        if (secondOperand != 0) result = firstOperand / secondOperand; 
-                        break;
-                }
+        int bg;
+        int fg;
+        int ripple = 0x22000000;
+        float size;
 
-                String resultStr = (result % 1 == 0) ? String.valueOf((long) result) : String.valueOf(result);
-                display.setText(resultStr);
-                
-                currentInput = resultStr;
-                operator = "";
-            }
+        if (label.equals("=")) {
+            bg = COLOR_EQUALS_BG;
+            fg = 0xFFFFFFFF;
+            ripple = 0x44FFFFFF;
+            size = 34;
+        } else if (label.matches("[+−×÷]")) {
+            bg = COLOR_OP_BG;
+            fg = COLOR_BLUE_TEXT;
+            size = 32;
+        } else if (label.equals("AC")) {
+            bg = COLOR_FUNC_BG;
+            fg = COLOR_BLUE_TEXT;
+            size = 22;
+        } else if (label.equals("( )") || label.equals("%") || label.equals("⌫")) {
+            bg = COLOR_FUNC_BG;
+            fg = COLOR_BLUE_TEXT;
+            size = 26;
+        } else {
+            bg = COLOR_DIGIT_BG;
+            fg = COLOR_TEXT;
+            size = 30;
+        }
+
+        btn.setTextColor(fg);
+        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, size);
+        btn.setBackground(makeBackground(bg, ripple));
+
+        btn.setOnClickListener(v -> handleButtonClick(label));
+
+        if (label.equals("⌫")) {
+            // Долгое нажатие на ⌫ — очистить всё
+            btn.setOnLongClickListener(v -> {
+                resetAll();
+                refresh();
+                return true;
+            });
+        }
+        return btn;
+    }
+
+    private Drawable makeBackground(int fill, int rippleColor) {
+        float radius = dp(30);
+
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(fill);
+        shape.setCornerRadius(radius);
+
+        GradientDrawable mask = new GradientDrawable();
+        mask.setColor(0xFF000000);
+        mask.setCornerRadius(radius);
+
+        return new RippleDrawable(ColorStateList.valueOf(rippleColor), shape, mask);
+    }
+
+    private int dp(float value) {
+        return Math.round(TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, value, getResources().getDisplayMetrics()));
+    }
+
+    private void refresh() {
+        if (justEvaluated) {
+            expressionView.setTextColor(COLOR_TEXT_SECONDARY);
+            expressionView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
+            expressionView.setText(lastExpression);
+
+            resultView.setTextColor(COLOR_TEXT);
+            resultView.setTextSize(TypedValue.COMPLEX_UNIT_SP, resultSize(currentInput.length()));
+            resultView.setText(currentInput);
+        } else {
+            String expr = committed + currentInput;
+
+            expressionView.setTextColor(COLOR_TEXT);
+            expressionView.setTextSize(TypedValue.COMPLEX_UNIT_SP, expressionSize(expr.length()));
+            expressionView.setText(expr.isEmpty() ? "0" : expr);
+
+            resultView.setTextColor(showError ? COLOR_ERROR : COLOR_TEXT_SECONDARY);
+            resultView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+            resultView.setText(showError ? "Ошибка" : previewText(expr));
         }
     }
+
+    private float expressionSize(int len) {
+        if (len <= 10) return 56;
+        if (len <= 14) return 44;
+        if (len <= 20) return 34;
+        if (len <= 40) return 28;
+        return 22;
+    }
+
+    private float resultSize(int len) {
+        if (len <= 8) return 56;
+        if (len <= 11) return 44;
+        if (len <= 15) return 34;
+        return 26;
+    }
+
+    // =====================================================================
+    //  Обработка нажатий
+    // =====================================================================
+
+    private void handleButtonClick(String value) {
+        showError = false;
+
+        if (value.matches("[0-9]")) {
+            inputDigit(value);
+
+        } else if (value.equals(".")) {
+            inputDecimal();
+
+        } else if (value.matches("[+−×÷]")) {
+            inputOperator(value);
+
+        } else if (value.equals("%")) {
+            inputPercent();
+
+        } else if (value.equals("( )")) {
+            inputParenthesis();
+
+        } else if (value.equals("⌫")) {
+            backspace();
+
+        } else if (value.equals("AC")) {
+            resetAll();
+
+        } else if (value.equals("=")) {
+            if (checkSecretCode(currentInput)) {
+                resetAll();
+                refresh();
+                return;
+            }
+            evaluateExpression();
+        }
+
+        refresh();
+    }
+
+    private void resetAll() {
+        committed = "";
+        currentInput = "";
+        lastExpression = "";
+        justEvaluated = false;
+        showError = false;
+    }
+
+    private void startFreshIfEvaluated() {
+        if (justEvaluated) {
+            committed = "";
+            currentInput = "";
+            justEvaluated = false;
+        }
+    }
+
+    private boolean endsWithClosingToken() {
+        return committed.endsWith(")") || committed.endsWith("%");
+    }
+
+    private void inputDigit(String d) {
+        startFreshIfEvaluated();
+        if (currentInput.isEmpty() && endsWithClosingToken()) committed += "×";
+        if (currentInput.equals("0")) currentInput = "";
+        if (currentInput.length() >= MAX_NUMBER_LENGTH) return;
+        currentInput += d;
+    }
+
+    private void inputDecimal() {
+        startFreshIfEvaluated();
+        if (currentInput.isEmpty()) {
+            if (endsWithClosingToken()) committed += "×";
+            currentInput = "0.";
+            return;
+        }
+        if (!currentInput.contains(".") && currentInput.length() < MAX_NUMBER_LENGTH) {
+            currentInput += ".";
+        }
+    }
+
+    private static boolean isOperator(char c) {
+        return c == '+' || c == '−' || c == '×' || c == '÷';
+    }
+
+    private void inputOperator(String op) {
+        if (justEvaluated) {
+            // Продолжаем вычисления с результатом
+            committed = "";
+            justEvaluated = false;
+        }
+
+        if (!currentInput.isEmpty()) {
+            committed += currentInput + op;
+            currentInput = "";
+            return;
+        }
+
+        // Ничего не введено или сразу после "("
+        if (committed.isEmpty() || committed.endsWith("(")) {
+            if (op.equals("−")) committed += op; // унарный минус
+            return;
+        }
+
+        char last = committed.charAt(committed.length() - 1);
+        if (isOperator(last)) {
+            int n = committed.length();
+            boolean unary = n == 1 || "(+−×÷".indexOf(committed.charAt(n - 2)) >= 0;
+            if (unary) return;
+
+            if (op.equals("−") && (last == '×' || last == '÷')) {
+                committed += op; // 5×−3
+                return;
+            }
+            committed = committed.substring(0, n - 1) + op; // замена оператора
+            return;
+        }
+
+        // После ")" или "%"
+        committed += op;
+    }
+
+    private void inputPercent() {
+        if (justEvaluated) {
+            committed = "";
+            justEvaluated = false;
+        }
+        if (!currentInput.isEmpty()) {
+            committed += currentInput + "%";
+            currentInput = "";
+        } else if (endsWithClosingToken()) {
+            committed += "%";
+        }
+    }
+
+    private void inputParenthesis() {
+        startFreshIfEvaluated();
+
+        String full = committed + currentInput;
+        int open = 0;
+        for (int i = 0; i < full.length(); i++) {
+            char c = full.charAt(i);
+            if (c == '(') open++;
+            else if (c == ')') open--;
+        }
+
+        char last = full.isEmpty() ? 0 : full.charAt(full.length() - 1);
+        boolean numberLike = Character.isDigit(last) || last == '.' || last == ')' || last == '%';
+
+        if (open > 0 && numberLike) {
+            committed += currentInput + ")";
+        } else {
+            committed += currentInput + (numberLike ? "×" : "") + "(";
+        }
+        currentInput = "";
+    }
+
+    private void backspace() {
+        if (justEvaluated) {
+            justEvaluated = false;
+            committed = "";
+        }
+
+        if (!currentInput.isEmpty()) {
+            currentInput = currentInput.substring(0, currentInput.length() - 1);
+            if (currentInput.equals("−")) currentInput = "";
+            return;
+        }
+
+        if (!committed.isEmpty()) {
+            committed = committed.substring(0, committed.length() - 1);
+
+            // Возвращаем число, оказавшееся в конце, обратно в режим ввода
+            int i = committed.length();
+            while (i > 0 && (Character.isDigit(committed.charAt(i - 1)) || committed.charAt(i - 1) == '.')) {
+                i--;
+            }
+            currentInput = committed.substring(i);
+            committed = committed.substring(0, i);
+        }
+    }
+
+    private void evaluateExpression() {
+        if (justEvaluated) return;
+
+        String full = committed + currentInput;
+        if (full.isEmpty()) return;
+
+        String prepared = balance(full);
+        Double result = evaluate(prepared);
+        if (result == null) {
+            showError = true;
+            return;
+        }
+
+        lastExpression = prepared + " =";
+        currentInput = format(result);
+        committed = "";
+        justEvaluated = true;
+    }
+
+    // =====================================================================
+    //  Вычисление выражений
+    // =====================================================================
+
+    /** Убирает "висящие" операторы/скобку в конце и закрывает незакрытые скобки. */
+    private String balance(String e) {
+        while (!e.isEmpty()) {
+            char last = e.charAt(e.length() - 1);
+            if (isOperator(last) || last == '(') {
+                e = e.substring(0, e.length() - 1);
+            } else {
+                break;
+            }
+        }
+        int open = 0;
+        for (int i = 0; i < e.length(); i++) {
+            char c = e.charAt(i);
+            if (c == '(') open++;
+            else if (c == ')') open--;
+        }
+        StringBuilder sb = new StringBuilder(e);
+        for (int i = 0; i < open; i++) sb.append(')');
+        return sb.toString();
+    }
+
+    private Double evaluate(String expression) {
+        try {
+            double v = new ExpressionParser(expression).parse();
+            if (Double.isNaN(v) || Double.isInfinite(v)) return null;
+            return v;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private String previewText(String expr) {
+        if (expr.isEmpty()) return "";
+        String prepared = balance(expr);
+        if (prepared.isEmpty() || prepared.matches("−?[0-9.]+")) return "";
+        Double v = evaluate(prepared);
+        return v == null ? "" : format(v);
+    }
+
+    private String format(double v) {
+        BigDecimal bd = new BigDecimal(v).round(new MathContext(12)).stripTrailingZeros();
+        if (bd.signum() == 0) return "0";
+        return bd.toPlainString().replace("-", "−");
+    }
+
+    /**
+     * Простой рекурсивный парсер: + − × ÷ ( ) % и унарный минус.
+     * "100+10%" считается как 110 (процент от первого слагаемого), как в Google Calculator.
+     */
+    private static class ExpressionParser {
+        private final String s;
+        private int pos = 0;
+        private boolean factorPercent = false;
+        private boolean termPercent = false;
+
+        ExpressionParser(String s) {
+            this.s = s;
+        }
+
+        double parse() {
+            double v = parseExpression();
+            if (pos != s.length()) throw new IllegalArgumentException("Unexpected token");
+            return v;
+        }
+
+        private double parseExpression() {
+            double left = parseTerm();
+            while (pos < s.length() && (s.charAt(pos) == '+' || s.charAt(pos) == '−')) {
+                char op = s.charAt(pos++);
+                double right = parseTerm();
+                if (termPercent) right = left * right;
+                left = (op == '+') ? left + right : left - right;
+            }
+            return left;
+        }
+
+        private double parseTerm() {
+            double v = parseFactor();
+            boolean pct = factorPercent;
+            while (pos < s.length() && (s.charAt(pos) == '×' || s.charAt(pos) == '÷')) {
+                char op = s.charAt(pos++);
+                double r = parseFactor();
+                v = (op == '×') ? v * r : v / r;
+                pct = false;
+            }
+            termPercent = pct;
+            return v;
+        }
+
+        private double parseFactor() {
+            if (pos >= s.length()) throw new IllegalArgumentException("Unexpected end");
+
+            char c = s.charAt(pos);
+            if (c == '−') {
+                pos++;
+                return -parseFactor();
+            }
+            if (c == '+') {
+                pos++;
+                return parseFactor();
+            }
+
+            double v;
+            if (c == '(') {
+                pos++;
+                v = parseExpression();
+                if (pos >= s.length() || s.charAt(pos) != ')') {
+                    throw new IllegalArgumentException("Missing )");
+                }
+                pos++;
+            } else {
+                int start = pos;
+                while (pos < s.length()
+                        && (Character.isDigit(s.charAt(pos)) || s.charAt(pos) == '.')) {
+                    pos++;
+                }
+                if (start == pos) throw new IllegalArgumentException("Number expected");
+                v = Double.parseDouble(s.substring(start, pos));
+            }
+
+            boolean pct = false;
+            while (pos < s.length() && s.charAt(pos) == '%') {
+                pos++;
+                v /= 100.0;
+                pct = true;
+            }
+            factorPercent = pct;
+            return v;
+        }
+    }
+
+    // =====================================================================
+    //  Проверка секретного кода — БЕЗ ИЗМЕНЕНИЙ
+    // =====================================================================
 
     private boolean checkSecretCode(String data) {
         if (data == null) return false; 
