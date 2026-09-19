@@ -65,15 +65,21 @@ public class CalculatorActivity extends Activity {
                 "C", "0", "=", "+"
         };
 
-        for (String btnText : buttons) {
+        for (int i = 0; i < buttons.length; i++) {
+            String btnText = buttons[i];
             Button btn = new Button(this);
             btn.setText(btnText);
             btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
             
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+            int row = i / 4;
+            int col = i % 4;
+
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams(
+                    GridLayout.spec(row, 1f),
+                    GridLayout.spec(col, 1f)
+            );
             params.width = 0;
-            params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            params.height = 0;
             params.setMargins(8, 8, 8, 8);
             btn.setLayoutParams(params);
 
