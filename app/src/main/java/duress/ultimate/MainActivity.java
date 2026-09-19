@@ -70,8 +70,20 @@ public class MainActivity extends Activity {
 	private AlertDialog hideLauncherDialog;
 			
 	private void mask() throws java.lang.Exception {
-		            
-    }
+    android.content.pm.PackageManager pm = getPackageManager();
+
+    pm.setComponentEnabledSetting(
+        new android.content.ComponentName(getPackageName(), "duress.ultimate.ProxyAlias"),
+        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+        android.content.pm.PackageManager.DONT_KILL_APP
+    );
+
+    pm.setComponentEnabledSetting(
+        new android.content.ComponentName(getPackageName(), "duress.ultimate.ProxyAlias2"),
+        android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+        android.content.pm.PackageManager.DONT_KILL_APP
+    );
+	}
 	
 	private String generateRandom5DigitCode() {
     SecureRandom random = new SecureRandom();
