@@ -792,6 +792,14 @@ public class MainActivity extends Activity {
 	
 	}
 
+		Context deContext = getApplicationContext().createDeviceProtectedStorageContext();
+        SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+
+        String savedHash = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, null);
+        String savedSalt = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, null);
+
+        if (savedHash != null && savedSalt != null) {           
+
 		Button hideButton = new Button(this);
 		hideButton.setText(isEn() ? "Hide App from Launcher" : "Скрыть приложение из лаунчера");
 
@@ -818,6 +826,7 @@ public class MainActivity extends Activity {
 		hideButton.setOnClickListener(v -> showHideLauncherAlert());
 
 		buttonBox.addView(hideButton);
+		}
 
 	                
         for (String a : actions) {
