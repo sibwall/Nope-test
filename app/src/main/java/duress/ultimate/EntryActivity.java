@@ -36,17 +36,10 @@ public class EntryActivity extends Activity {
 		}
 	}
 
-	private void navigateToMainActivity() {        
-    isLogged = true;
-    
-    try {
-        Class<?> MainActivity = Class.forName(getPackageName() + ".MainActivity");
-        startActivity(new Intent(this, MainActivity));
-    } catch (ClassNotFoundException e) {
-        startActivity(new Intent(this, MainActivity2.class));
-    }
-    
-    finish();
+	private void navigateToMainActivity() {           
+		isLogged = true;
+		startActivity(new Intent(this, MainActivity.class));   	 
+		finish();
 	}
 
 
