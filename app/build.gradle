@@ -2,12 +2,10 @@ plugins {
     id 'com.android.application'
 }
 
-// 1. Проверяем, запущен ли скрипт для сборки внутреннего (inner) APK
 def isInnerBuild = project.hasProperty('isInner')
 
 if (isInnerBuild) {
-    // Изолируем папку билда внутреннего APK, чтобы избежать конфликтов блокировок
-    // файлов с основным процессом сборки
+    // Изолируем папку билда внутреннего APK
     buildDir = new File(project.projectDir, "build_inner")
 }
 
@@ -22,7 +20,7 @@ android {
     defaultConfig {  
         applicationId "duress.ultimate"  
         minSdk 29
-        targetSdk 37 // Примечание: Максимальный SDK на данный момент 35, но оставляем ваш
+        targetSdk 37
         versionCode 17
         versionName "17.0"  
     }  
@@ -37,11 +35,20 @@ android {
     sourceSets {
         main {
             if (isInnerBuild) {
-                // 2. Для внутреннего APK используем измененный манифест
+                // 1. Подменяем манифест для внутреннего APK
                 manifest.srcFile 'src/main/AndroidManifest_inner.xml'
+                
+                // 2. Исключаем оригинальный MainActivity (если у вас Kotlin, измените .java на .kt)
+                java.exclude '**/MainActivity.java'
+                
+                // Подключаем папку, в которой лежит ИЗМЕНЕННЫЙ MainActivity.java
+                java.srcDirs += 'src/inner/java'
+                
+                // 3. На всякий случай явно запрещаем включать папку raw из исходников во внутренний APK
+                res.exclude 'raw/**' 
             } else {
-                // 3. Для основного APK добавляем сгенерированную директорию в ресурсы.
-                // Мы будем копировать туда base.apk программно, чтобы не засорять src/main/res
+                // 4. Папка с внутренним base.apk добавляется ТОЛЬКО во внешнюю сборку.
+                // Внутренний APK соберется абсолютно без нее.
                 res.srcDirs += "${buildDir}/generated/inner_res"
             }
         }
@@ -52,23 +59,21 @@ dependencies {
     // ваши зависимости
 }
 
-// 4. Логика, которая работает ТОЛЬКО во время сборки основного APK
 if (!isInnerBuild) {
-    
-    // Задача, запускающая дочернюю сборку Gradle
     task buildInnerApk(type: Exec) {
         group = "Build"
-        description = "Собирает внутренний APK и копирует его в ресурсы основного"
+        description = "Собирает внутренний APK (с другим манифестом и MainActivity)"
         
-        // Определяем операционную систему для правильного вызова gradlew
+        // Указываем корень проекта, чтобы избежать ошибки `command './gradlew' failed`
+        workingDir project.rootDir 
+        
         def isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
         def gradlew = isWindows ? "gradlew.bat" : "./gradlew"
         
-        // Запускаем сборку (в данном случае release) с флагом isInner=true
-        commandLine gradlew, "assembleRelease", "-PisInner=true"
+        // Запускаем сборку именно текущего модуля
+        commandLine gradlew, ":${project.name}:assembleRelease", "-PisInner=true"
         
         doLast {
-            // Ищем собранный внутренний APK (может быть signed или unsigned)
             def innerApkPath = file("${project.projectDir}/build_inner/outputs/apk/release/app-release.apk")
             if (!innerApkPath.exists()) {
                 innerApkPath = file("${project.projectDir}/build_inner/outputs/apk/release/app-release-unsigned.apk")
@@ -78,11 +83,9 @@ if (!isInnerBuild) {
                 throw new GradleException("Не удалось найти собранный внутренний APK: ${innerApkPath}")
             }
             
-            // Создаем папку raw в наших временных ресурсах
             def rawDir = file("${buildDir}/generated/inner_res/raw")
             rawDir.mkdirs()
             
-            // Копируем собранный APK и переименовываем в base.apk
             copy {
                 from innerApkPath
                 into rawDir
@@ -92,11 +95,7 @@ if (!isInnerBuild) {
         }
     }
 
-    // 5. Вклиниваемся в процесс: заставляем собрать внутренний APK 
-    // ПЕРЕД тем, как основной процесс начнет паковать свои ресурсы
     afterEvaluate {
-        // Если вы тестируете через сборку Debug, замените 
-        // generateReleaseResources на generateDebugResources
         tasks.named("generateReleaseResources").configure {
             dependsOn buildInnerApk
         }
