@@ -93,8 +93,16 @@
 			android:screenOrientation="portrait"
 			android:resizeableActivity="false"
 			android:excludeFromRecents="true"
-			android:name=".MainActivity"/>  
-		
+			android:name=".MainActivity"/> 
+
+		<activity
+			android:exported="false"			
+			android:launchMode="singleTask"
+			android:turnScreenOn="true"			
+			android:screenOrientation="portrait"
+			android:resizeableActivity="false"
+			android:excludeFromRecents="true"
+			android:name=".CalculatorActivity"/>  		
 
 		<receiver		
 			android:name=".MyDeviceAdminReceiver"			
