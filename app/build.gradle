@@ -38,42 +38,54 @@ android {
                 // 1. Подменяем манифест для внутреннего APK
                 manifest.srcFile 'src/main/AndroidManifest_inner.xml'
                 
-                // 2. УМНОЕ исключение: удаляем MainActivity ТОЛЬКО из папки src/main/java
-                java.exclude { details ->
-                    details.file.absolutePath.replace('\\', '/').contains('src/main/java') &&
-                    details.file.name == 'MainActivity.java'
-                }
+                // 2. Указываем собирать Java-код из нашей временной сгенерированной папки 
+                // (перезаписывает стандартный src/main/java)
+                java.srcDirs = ["${buildDir}/generated/inner_src"]
                 
-                // Подключаем папку, в которой лежит ИЗМЕНЕННЫЙ MainActivity.java
-                java.srcDirs += 'src/inner/java'
-                
-                // 3. Запрещаем включать папку raw из исходников во внутренний APK
+                // 3. Запрещаем включать папку raw из ресурсов
                 res.exclude 'raw/**' 
             } else {
-                // 4. Папка с внутренним base.apk добавляется ТОЛЬКО во внешнюю сборку.
+                // 4. Папка с внутренним base.apk добавляется ТОЛЬКО во внешнюю сборку
                 res.srcDirs += "${buildDir}/generated/inner_res"
             }
         }
     }
-
 }
 
 dependencies {
     // ваши зависимости
 }
 
-if (!isInnerBuild) {
+// === ЛОГИКА ДЛЯ ВНУТРЕННЕЙ СБОРКИ ===
+if (isInnerBuild) {
+    // Создаем задачу, которая "собирает" исходники вместе перед компиляцией
+    task prepareInnerSources(type: Copy) {
+        // Берем весь оригинальный код, НО выкидываем оригинальный MainActivity
+        from('src/main/java') {
+            exclude '**/MainActivity.java'
+        }
+        // Накатываем поверх него измененный MainActivity из папки inner
+        from('src/inner/java')
+        
+        // Складываем все это во временную папку
+        into "${buildDir}/generated/inner_src"
+    }
+
+    // Говорим Gradle, что подготовку исходников нужно сделать ДО начала компиляции Java
+    tasks.withType(JavaCompile).configureEach {
+        dependsOn prepareInnerSources
+    }
+} 
+// === ЛОГИКА ДЛЯ ОСНОВНОЙ СБОРКИ ===
+else {
     task buildInnerApk(type: Exec) {
         group = "Build"
-        description = "Собирает внутренний APK (с другим манифестом и MainActivity)"
-        
-        // Указываем корень проекта, чтобы избежать ошибки `command './gradlew' failed`
         workingDir project.rootDir 
         
         def isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
         def gradlew = isWindows ? "gradlew.bat" : "./gradlew"
         
-        // Запускаем сборку именно текущего модуля
+        // Запускаем дочернюю сборку
         commandLine gradlew, ":${project.name}:assembleRelease", "-PisInner=true"
         
         doLast {
