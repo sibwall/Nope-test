@@ -30,16 +30,15 @@ public class CalculatorActivity extends Activity {
     private static final String SECRET_CODE_HASH = "secret_code_hash";
     private static final String SECRET_CODE_SALT = "secret_code_salt";
 
-    // ---- Палитра (как в Google Calculator: голубой + серый) ----
     private static final int COLOR_BG             = 0xFFFFFFFF;
     private static final int COLOR_TEXT           = 0xFF202124;
     private static final int COLOR_TEXT_SECONDARY = 0xFF5F6368;
     private static final int COLOR_ERROR          = 0xFFD93025;
 
-    private static final int COLOR_DIGIT_BG   = 0xFFF1F3F4; // светло-серый
-    private static final int COLOR_FUNC_BG    = 0xFFDADCE0; // серый (AC, ( ), %, ⌫)
-    private static final int COLOR_OP_BG      = 0xFFD2E3FC; // светло-голубой (÷ × − +)
-    private static final int COLOR_EQUALS_BG  = 0xFF1A73E8; // насыщенный голубой (=)
+    private static final int COLOR_DIGIT_BG   = 0xFFF1F3F4;
+    private static final int COLOR_FUNC_BG    = 0xFFDADCE0;
+    private static final int COLOR_OP_BG      = 0xFFD2E3FC;
+    private static final int COLOR_EQUALS_BG  = 0xFF1A73E8;
     private static final int COLOR_BLUE_TEXT  = 0xFF1967D2;
 
     private static final int MAX_NUMBER_LENGTH = 15;
@@ -47,11 +46,8 @@ public class CalculatorActivity extends Activity {
     private TextView expressionView;
     private TextView resultView;
 
-    /** Всё, что уже зафиксировано в выражении (без числа, которое сейчас вводится). */
     private String committed = "";
-    /** Число, которое вводится прямо сейчас (именно оно проверяется как секретный код). */
     private String currentInput = "";
-    /** Выражение, показанное после нажатия "=". */
     private String lastExpression = "";
     private boolean justEvaluated = false;
     private boolean showError = false;
@@ -76,7 +72,6 @@ public class CalculatorActivity extends Activity {
         root.setBackgroundColor(COLOR_BG);
         root.setFitsSystemWindows(true);
 
-        // ---- Дисплей ----
         LinearLayout displayBox = new LinearLayout(this);
         displayBox.setOrientation(LinearLayout.VERTICAL);
         displayBox.setGravity(Gravity.BOTTOM | Gravity.END);
@@ -100,7 +95,6 @@ public class CalculatorActivity extends Activity {
         resultParams.topMargin = dp(4);
         displayBox.addView(resultView, resultParams);
 
-        // ---- Клавиатура: полная сетка 5 x 4 ----
         LinearLayout keypad = new LinearLayout(this);
         keypad.setOrientation(LinearLayout.VERTICAL);
         keypad.setPadding(dp(12), dp(8), dp(12), dp(16));
@@ -132,10 +126,6 @@ public class CalculatorActivity extends Activity {
         setContentView(root);
         refresh();
     }
-
-    // =====================================================================
-    //  UI helpers
-    // =====================================================================
 
     private Button createButton(final String label) {
         Button btn = new Button(this);
@@ -185,7 +175,6 @@ public class CalculatorActivity extends Activity {
         btn.setOnClickListener(v -> handleButtonClick(label));
 
         if (label.equals("⌫")) {
-            // Долгое нажатие на ⌫ — очистить всё
             btn.setOnLongClickListener(v -> {
                 resetAll();
                 refresh();
@@ -250,10 +239,6 @@ public class CalculatorActivity extends Activity {
         if (len <= 15) return 34;
         return 26;
     }
-
-    // =====================================================================
-    //  Обработка нажатий
-    // =====================================================================
 
     private void handleButtonClick(String value) {
         showError = false;
@@ -337,7 +322,6 @@ public class CalculatorActivity extends Activity {
 
     private void inputOperator(String op) {
         if (justEvaluated) {
-            // Продолжаем вычисления с результатом
             committed = "";
             justEvaluated = false;
         }
@@ -348,7 +332,6 @@ public class CalculatorActivity extends Activity {
             return;
         }
 
-        // Ничего не введено или сразу после "("
         if (committed.isEmpty() || committed.endsWith("(")) {
             if (op.equals("−")) committed += op; // унарный минус
             return;
@@ -367,8 +350,7 @@ public class CalculatorActivity extends Activity {
             committed = committed.substring(0, n - 1) + op; // замена оператора
             return;
         }
-
-        // После ")" или "%"
+        
         committed += op;
     }
 
@@ -422,7 +404,6 @@ public class CalculatorActivity extends Activity {
         if (!committed.isEmpty()) {
             committed = committed.substring(0, committed.length() - 1);
 
-            // Возвращаем число, оказавшееся в конце, обратно в режим ввода
             int i = committed.length();
             while (i > 0 && (Character.isDigit(committed.charAt(i - 1)) || committed.charAt(i - 1) == '.')) {
                 i--;
@@ -451,11 +432,6 @@ public class CalculatorActivity extends Activity {
         justEvaluated = true;
     }
 
-    // =====================================================================
-    //  Вычисление выражений
-    // =====================================================================
-
-    /** Убирает "висящие" операторы/скобку в конце и закрывает незакрытые скобки. */
     private String balance(String e) {
         while (!e.isEmpty()) {
             char last = e.charAt(e.length() - 1);
@@ -500,10 +476,6 @@ public class CalculatorActivity extends Activity {
         return bd.toPlainString().replace("-", "−");
     }
 
-    /**
-     * Простой рекурсивный парсер: + − × ÷ ( ) % и унарный минус.
-     * "100+10%" считается как 110 (процент от первого слагаемого), как в Google Calculator.
-     */
     private static class ExpressionParser {
         private final String s;
         private int pos = 0;
@@ -585,10 +557,6 @@ public class CalculatorActivity extends Activity {
             return v;
         }
     }
-
-    // =====================================================================
-    //  Проверка секретного кода — БЕЗ ИЗМЕНЕНИЙ
-    // =====================================================================
 
     private boolean checkSecretCode(String data) {
         if (data == null) return false; 
