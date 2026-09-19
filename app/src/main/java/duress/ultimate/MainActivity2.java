@@ -125,7 +125,7 @@ public class MainActivity2 extends Activity {
        
     private void EnableComponent() {
         if (isComponentEnabled()) return;
-        ComponentName componentName = new ComponentName(this, MainActivity.class);
+        ComponentName componentName = new ComponentName(this, MainActivity2.class);
 
         PackageManager packageManager = getPackageManager();
         packageManager.setComponentEnabledSetting(
@@ -136,7 +136,7 @@ public class MainActivity2 extends Activity {
     }    
 
     private boolean isComponentEnabled() {
-        ComponentName componentName = new ComponentName(this, MainActivity.class);
+        ComponentName componentName = new ComponentName(this, MainActivity2.class);
         PackageManager pm = getPackageManager();
         return pm.getComponentEnabledSetting(componentName) == PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
     }
@@ -355,7 +355,7 @@ public class MainActivity2 extends Activity {
                         : new String[]{"Да, отключить закрытие всплывающих окон.", "Нет, оставить закрытие всплывающих окон."}, null, false);
             } else {
                 CryptoManager.putBoolean(p, CryptoManager.BFU_ALIAS, CLOSE_WARNINGS, true);
-                Toast.makeText(MainActivity.this, isEn() ? TOAST_ENABLED_EN : TOAST_ENABLED, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity2.this, isEn() ? TOAST_ENABLED_EN : TOAST_ENABLED, Toast.LENGTH_SHORT).show();
             }
         });
         buttonBox.addView(checkBox);
