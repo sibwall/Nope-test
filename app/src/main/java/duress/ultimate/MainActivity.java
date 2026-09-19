@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
 
 	private AlertDialog hideLauncherDialog;
 			
-	private void hide() throws java.lang.Exception {
+	private void mask() throws java.lang.Exception {
 		            
     }
 	
@@ -106,7 +106,7 @@ public class MainActivity extends Activity {
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, saltBase64);
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, codeHash);
                                         
-					hide();
+					mask();
 
 					finishAndRemoveTask();
                     
