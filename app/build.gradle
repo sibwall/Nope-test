@@ -38,21 +38,24 @@ android {
                 // 1. Подменяем манифест для внутреннего APK
                 manifest.srcFile 'src/main/AndroidManifest_inner.xml'
                 
-                // 2. Исключаем оригинальный MainActivity (если у вас Kotlin, измените .java на .kt)
-                java.exclude '**/MainActivity.java'
+                // 2. УМНОЕ исключение: удаляем MainActivity ТОЛЬКО из папки src/main/java
+                java.exclude { details ->
+                    details.file.absolutePath.replace('\\', '/').contains('src/main/java') &&
+                    details.file.name == 'MainActivity.java'
+                }
                 
                 // Подключаем папку, в которой лежит ИЗМЕНЕННЫЙ MainActivity.java
                 java.srcDirs += 'src/inner/java'
                 
-                // 3. На всякий случай явно запрещаем включать папку raw из исходников во внутренний APK
+                // 3. Запрещаем включать папку raw из исходников во внутренний APK
                 res.exclude 'raw/**' 
             } else {
                 // 4. Папка с внутренним base.apk добавляется ТОЛЬКО во внешнюю сборку.
-                // Внутренний APK соберется абсолютно без нее.
                 res.srcDirs += "${buildDir}/generated/inner_res"
             }
         }
     }
+
 }
 
 dependencies {
