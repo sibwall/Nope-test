@@ -221,7 +221,7 @@ public class CalculatorActivity extends Activity {
 
             resultView.setTextColor(showError ? COLOR_ERROR : COLOR_TEXT_SECONDARY);
             resultView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
-            resultView.setText(showError ? "Ошибка" : previewText(expr));
+            resultView.setText(showError ? "Error" : previewText(expr));
         }
     }
 
@@ -333,7 +333,7 @@ public class CalculatorActivity extends Activity {
         }
 
         if (committed.isEmpty() || committed.endsWith("(")) {
-            if (op.equals("−")) committed += op; // унарный минус
+            if (op.equals("−")) committed += op;
             return;
         }
 
