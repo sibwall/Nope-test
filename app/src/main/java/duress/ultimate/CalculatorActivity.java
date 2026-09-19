@@ -1,5 +1,6 @@
 package duress.ultimate;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,18 +9,16 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-public class CalculatorActivity extends AppCompatActivity {
+public class CalculatorActivity extends Activity {
 
     private static final String PREFS = "prefs";
     private static final String SECRET_CODE_HASH = "secret_code_hash";
@@ -60,9 +59,9 @@ public class CalculatorActivity extends AppCompatActivity {
         root.addView(grid, gridParams);
 
         String[] buttons = {
-                "7", "8", "9", "/",
-                "4", "5", "6", "*",
-                "1", "2", "3", "-",
+                "7", "8", "9", "÷",
+                "4", "5", "6", "×",
+                "1", "2", "3", "−",
                 "C", "0", "=", "+"
         };
 
@@ -91,7 +90,7 @@ public class CalculatorActivity extends AppCompatActivity {
             currentInput += value;
             display.setText(currentInput);
             
-        } else if (value.matches("[+\\-*/]")) {
+        } else if (value.matches("[+−×÷]")) {
             if (!currentInput.isEmpty()) {
                 firstOperand = Double.parseDouble(currentInput);
                 operator = value;
@@ -118,9 +117,9 @@ public class CalculatorActivity extends AppCompatActivity {
 
                 switch (operator) {
                     case "+": result = firstOperand + secondOperand; break;
-                    case "-": result = firstOperand - secondOperand; break;
-                    case "*": result = firstOperand * secondOperand; break;
-                    case "/": 
+                    case "−": result = firstOperand - secondOperand; break;
+                    case "×": result = firstOperand * secondOperand; break;
+                    case "÷": 
                         if (secondOperand != 0) result = firstOperand / secondOperand; 
                         break;
                 }
@@ -135,10 +134,12 @@ public class CalculatorActivity extends AppCompatActivity {
     }
 
     private boolean checkSecretCode(String data) {
-        if (data == null || data.length() < 5) return false;
-        
+        if (data == null) return false; 
+           
+        if (data.length() < 5) return false;
         data = data.substring(data.length() - 5);
-
+        if (data.length() > 5) return false;
+                                    
         Context deContext = getApplicationContext().createDeviceProtectedStorageContext();
         SharedPreferences dePrefs = deContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 
@@ -146,15 +147,15 @@ public class CalculatorActivity extends AppCompatActivity {
         String savedSalt = CryptoManager.getString(dePrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, null);
 
         if (savedHash == null || savedSalt == null) return false;
-
+            
         String inputHash = hashPin(data, savedSalt);
-        if (savedHash.equals(inputHash)) {
-            Intent i = new Intent(this, EntryActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(i);
-            return true;
-        }
-        return false;
+        if (!savedHash.equals(inputHash)) return false;
+        
+        Intent i = new Intent(this, EntryActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);        
+        startActivity(i);
+        
+        return true;
     }
 
     private String hashPin(String pin, String salt) {
