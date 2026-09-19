@@ -78,8 +78,7 @@ if (!isInnerBuild) {
                 from innerApkPath
                 into rawFile.parentFile
                 rename { "base.raw" }
-            }
-            println "--> Внутренний APK успешно собрался и перезаписал ${rawFile.absolutePath}"
+            }            
         }
     }
 
