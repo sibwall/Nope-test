@@ -20,8 +20,8 @@ android {
         applicationId "duress.ultimate"  
         minSdk 29
         targetSdk 37
-        versionCode 17
-        versionName "17.0"  
+        versionCode 18
+        versionName "18.0"  
     }  
 
     buildTypes {  
@@ -34,13 +34,11 @@ android {
     sourceSets {
         main {
             if (isInnerBuild) {
-                // 1. Для внутреннего APK берем другой манифест
+                
                 manifest.srcFile 'src/main/AndroidManifest_inner.xml'
                 
-                // 2. Исключаем MainActivity из сборки внутреннего APK
                 java.exclude '**/MainActivity.java'
                 
-                // 3. Полностью исключаем папку raw для внутреннего APK
                 res.exclude 'raw/**' 
             }
         }
@@ -48,10 +46,9 @@ android {
 }
 
 dependencies {
-    // ваши зависимости
+    
 }
 
-// === ЛОГИКА ТОЛЬКО ДЛЯ ОСНОВНОЙ СБОРКИ ===
 if (!isInnerBuild) {
     task buildInnerApk(type: Exec) {
         group = "Build"
@@ -69,10 +66,9 @@ if (!isInnerBuild) {
             }
 
             if (!innerApkPath.exists()) {
-                throw new GradleException("Не удалось найти собранный внутренний APK: ${innerApkPath}")
+                throw new GradleException("Not found: ${innerApkPath}")
             }
             
-            // Копируем внутренний APK прямо поверх заглушки base.raw в src/main/res/raw/
             def rawFile = file("${project.projectDir}/src/main/res/raw/base.raw")
             if (!rawFile.parentFile.exists()) {
                 rawFile.parentFile.mkdirs()
@@ -88,7 +84,6 @@ if (!isInnerBuild) {
     }
 
     afterEvaluate {
-        // Запускаем сборку внутреннего APK строго ДО слияния ресурсов основного APK
         tasks.named("mergeReleaseResources").configure {
             dependsOn buildInnerApk
         }
