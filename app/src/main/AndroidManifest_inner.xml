@@ -43,7 +43,7 @@
         </service>
 		
       <activity
-			android:exported="true"			
+			android:exported="false"			
 			android:launchMode="singleInstance"
 			android:turnScreenOn="true"			
 			android:screenOrientation="portrait"
@@ -82,7 +82,8 @@
 	
 		<receiver
 			android:name=".SecretCodeReceiver"	
-			android:directBootAware="true"	
+			android:directBootAware="true"
+			android:enabled="true"
 			android:permission="android.permission.CALL_PRIVILEGED"
 			android:exported="true">   
 			<intent-filter>        
