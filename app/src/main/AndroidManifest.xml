@@ -46,18 +46,13 @@
         </service>
 		
         <activity
-			android:exported="true"			
+			android:exported="false"			
 			android:launchMode="singleInstance"
 			android:turnScreenOn="true"			
 			android:screenOrientation="portrait"
 			android:resizeableActivity="false"
 			android:excludeFromRecents="true"
-			android:name=".EntryActivity">
-			<intent-filter>       
-				<action android:name="android.intent.action.MAIN" />      
-				<category android:name="android.intent.category.LAUNCHER" />    
-			</intent-filter>
-        </activity>
+			android:name=".EntryActivity"/>		
 
 		<activity
 			android:exported="false"			
@@ -66,8 +61,7 @@
 			android:screenOrientation="portrait"
 			android:resizeableActivity="false"
 			android:excludeFromRecents="true"
-			android:name=".MainActivity">            
-        </activity>		
+			android:name=".MainActivity"/>            
 
 		<receiver		
 			android:name=".MyDeviceAdminReceiver"			
