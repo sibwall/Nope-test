@@ -669,7 +669,7 @@ public class MainActivity2 extends Activity {
             + "Некоторые функции приложения например авто-перезагрузка и сброс при USB после перехода могут не работать так как там не будет его процесса. Там будет отдельный процесс приложения с отдельной памятью и правами.\n\n"
             + "Все что вы сможете там с ним сделать - это установить лимит попыток.";
     
-			incognitoDialog = new AlertDialog.Builder(MainActivity.this)
+			incognitoDialog = new AlertDialog.Builder(MainActivity2.this)
             .setTitle(isEn() ? "Incognito Mode" : "Режим инкогнито")
             .setMessage(message)
             .setNegativeButton(isEn() ? "Cancel" : "Отмена", null)
@@ -680,7 +680,7 @@ public class MainActivity2 extends Activity {
 					dpm.reboot(adminName);					            
 				} catch (Throwable e) { 
 					CryptoManager.putBoolean(p, CryptoManager.BFU_ALIAS, "incognito_mode", false);									
-					Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();           
+					Toast.makeText(MainActivity2.this, e.getMessage(), Toast.LENGTH_SHORT).show();           
 				}            
 			
 			})
