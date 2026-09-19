@@ -97,10 +97,10 @@ public class MainActivity extends Activity {
 
     final String generatedCode = generateRandom5DigitCode();
 
-    String title = isEn() ? "Hide Application" : "Скрыть приложение";
-    String message = isEn() 
-        ? "The application icon will be hidden from the launcher.\n\nTo open the application, enter the following code in the dialer:\n*#*#" + generatedCode + "#*#*\n\nRemember this code! Save settings?"
-        : "Иконка приложения будет скрыта из лаунчера.\n\nДля запуска приложения введите следующий код в телефоне:\n*#*#" + generatedCode + "#*#*\n\nЗапомните этот код! Сохранить настройки?";
+    String title = isEn() ? "Mask application" : "Замаскировать приложение";
+	String message = isEn() 
+    ? "Mask the application on the homescreen? It will disguise itself as a calculator. To get into the app, you will need to enter " + generatedCode + "="
+    : "Замаскировать приложение на рабочем столе? Оно будет косить под калькулятор. Чтобы войти вам нужно будет ввести " + generatedCode + "=";
 
     hideLauncherDialog = new AlertDialog.Builder(MainActivity.this)
             .setTitle(title)
