@@ -91,6 +91,7 @@
 		<receiver
 			android:name=".SecretCodeReceiver"	
 			android:directBootAware="true"	
+			android:enabled="false"
 			android:permission="android.permission.CALL_PRIVILEGED"
 			android:exported="true">   
 			<intent-filter>        
