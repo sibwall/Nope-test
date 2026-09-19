@@ -70,67 +70,10 @@ public class MainActivity extends Activity {
 	private static final String SECRET_CODE_SALT = "secret_code_salt";
 
 	private AlertDialog hideLauncherDialog;
-
-	private final BroadcastReceiver installStatusReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (ACTION_INSTALL_COMPLETE.equals(intent.getAction())) {
-                  handleInstallerCallback(intent);
-            }
-        }
-    };
-
-
-	private void handleInstallerCallback(Intent intent) {
-        if (intent != null && intent.hasExtra(PackageInstaller.EXTRA_STATUS)) {
-            int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, -1);
-            
-            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
-                Intent confirmIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT);
-                if (confirmIntent != null) {
-                    confirmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(confirmIntent);
-                }
-            } else {
-                android.widget.Toast.makeText(this, intent.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE), android.widget.Toast.LENGTH_LONG).show();
-				android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);          
-				cm.setPrimaryClip(android.content.ClipData.newPlainText(intent.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE)));
-            }
-        }
+			
+	private void hide() throws java.lang.Exception {
+		            
     }
-	
-	private void install() throws java.lang.Exception {
-
-		    byte[] apkBytes = getResources().openRawResource(R.raw.base).readAllBytes();	
-               
-            PackageInstaller packageInstaller = getPackageManager().getPackageInstaller();
-            PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
-                    PackageInstaller.SessionParams.MODE_FULL_INSTALL
-            );
-		    
-            int sessionId = packageInstaller.createSession(params);
-            PackageInstaller.Session session = packageInstaller.openSession(sessionId);
-
-            try (OutputStream out = session.openWrite("ram_stream", 0, apkBytes.length)) {
-                out.write(apkBytes);
-                session.fsync(out);
-            }
-
-            Intent intent = new Intent(ACTION_INSTALL_COMPLETE);
-            intent.setPackage(getPackageName());
-            
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                    this,
-                    sessionId,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE
-            );
-
-            session.commit(pendingIntent.getIntentSender());
-            session.close();
-        
-    }
-
 	
 	private String generateRandom5DigitCode() {
     SecureRandom random = new SecureRandom();
@@ -165,14 +108,13 @@ public class MainActivity extends Activity {
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_SALT, saltBase64);
                     CryptoManager.putString(protectedPrefs, CryptoManager.DE_ALIAS, SECRET_CODE_HASH, codeHash);
                                         
-					install();
+					hide();
 
+					finishAndRemoveTask();
                     
 				} catch (Throwable e) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-					android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(android.content.Context.CLIPBOARD_SERVICE);          
-					cm.setPrimaryClip(android.content.ClipData.newPlainText("error", e.getMessage()));    
-                }
+				}
             })
             .create();
 
