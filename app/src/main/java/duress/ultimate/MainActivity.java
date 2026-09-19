@@ -50,8 +50,6 @@ public class MainActivity extends Activity {
     private static final String APP_PIN_SALT = "app_pin_salt";
     private static final String CLOSE_WARNINGS = "close_warnings";
 
-	private static final String ACTION_INSTALL_COMPLETE = "duress.ultimate.INSTALL_COMPLETE";
-
     private TextView text;
 	private AlertDialog dialog;
 	private AlertDialog deviceOwnerDialog;
