@@ -5,6 +5,7 @@ plugins {
 def isInnerBuild = project.hasProperty('isInner')
 
 if (isInnerBuild) {
+    // Изолируем папку билда внутреннего APK
     buildDir = new File(project.projectDir, "build_inner")
 }
 
@@ -34,14 +35,16 @@ android {
     sourceSets {
         main {
             if (isInnerBuild) {
-                // Подменяем манифест
+                // 1. Подменяем манифест для внутреннего APK
                 manifest.srcFile 'src/main/AndroidManifest_inner.xml'
-                // Перенаправляем исходники на временную папку, которую мы соберем сами
-                java.srcDirs = ["${buildDir}/generated/inner_src"]
-                // Убираем папку raw
+                
+                // 2. ПРОСТО ИСКЛЮЧАЕМ MainActivity из сборки
+                java.exclude '**/MainActivity.java'
+                
+                // 3. Запрещаем включать папку raw во внутренний APK
                 res.exclude 'raw/**' 
             } else {
-                // Добавляем внутренний APK во внешнюю сборку
+                // 4. Папка с внутренним base.apk добавляется ТОЛЬКО во внешнюю сборку
                 res.srcDirs += "${buildDir}/generated/inner_res"
             }
         }
@@ -49,42 +52,11 @@ android {
 }
 
 dependencies {
+    // ваши зависимости
 }
 
-// === ЛОГИКА ДЛЯ ВНУТРЕННЕЙ СБОРКИ ===
-if (isInnerBuild) {
-    // Задача, которая собирает нужные файлы вместе
-    task prepareInnerSources {
-        doLast {
-            def targetDir = file("${buildDir}/generated/inner_src")
-            // Очищаем папку от старых сборок
-            targetDir.deleteDir()
-            
-            // 1. Копируем ВЕСЬ оригинальный код, КРОМЕ MainActivity
-            copy {
-                from 'src/main/java'
-                exclude '**/MainActivity.java'
-                into targetDir
-            }
-            
-            // 2. Ищем измененный MainActivity ГДЕ УГОДНО в папке src/inner
-            // и принудительно кладем его на место старого!
-            copy {
-                from fileTree(dir: 'src/inner', include: '**/MainActivity.java')
-                // Вставляем ровно в тот же пакет, где он и должен быть
-                into "${targetDir}/duress/ultimate" 
-            }
-            println "--> Исходники для внутреннего APK успешно подменены!"
-        }
-    }
-
-    // Выполняем подмену файлов ДО того, как Gradle начнет что-либо анализировать
-    tasks.named("preBuild").configure {
-        dependsOn prepareInnerSources
-    }
-} 
-// === ЛОГИКА ДЛЯ ОСНОВНОЙ СБОРКИ ===
-else {
+// === ЛОГИКА ТОЛЬКО ДЛЯ ОСНОВНОЙ СБОРКИ ===
+if (!isInnerBuild) {
     task buildInnerApk(type: Exec) {
         group = "Build"
         workingDir project.rootDir 
